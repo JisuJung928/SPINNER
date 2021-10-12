@@ -1,2 +1,6 @@
-generation = 10
-population = 10
+# Evolution
+GENERATION = 10
+POPULATION = 10
+
+# Potential
+POT_PATH = ./potential_saved

@@ -22,7 +22,7 @@ If you want more information such as tuning parameters, please visit our online 
 
 2. randSpg
 
-```
+```bash
   mkdir build
   cd build
   cmake ..
