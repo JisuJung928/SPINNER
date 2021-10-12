@@ -1,4 +1,5 @@
 src/CMakeFiles/*
+src/CMakeLists_tmp.txt
 src/CMakeCache.txt
 src/cmake_install.cmake
 src/Makefile

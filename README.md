@@ -6,14 +6,21 @@ If you use SPINNER, please cite this paper: S. Kang et al. Accelerated identific
 Here we describe minimal instructions for running SPINNER.
 If you want more information such as tuning parameters, please visit our online manual(https://spinner-csp.readthedocs.io)
 
-## Installation
+## Requirement
+- LAMMPS 29Oct2020 or later
+- randSpg
+- SIMPLE-NN `81761d0` or later (if needed)
 
-### Download SPINNER
-```
-git clone https://github.com/MDIL-SNU/SPINNER.git
+## Install
+1. LAMMPS
+
+``` bash
+  cd src
+  make mpi
+  make mode=shlib mpi
 ```
 
-### Install randSpg
+2. randSpg
 
 ```
   mkdir build
@@ -21,39 +28,10 @@ git clone https://github.com/MDIL-SNU/SPINNER.git
   cmake ..
   make -j3
 ```
+ 
+3. `CMakeLists.txt`.
+``` bash
+SET ( LMP_PATH /path/to/lammps )
+SET ( RANDSPG_PATH /path/to/randspg )
 
 ```
-
-### Install LAMMPS
-
-```
-  cd src
-  make mpi
-  make mode=shlib mpi
-```
-
-## Usage
-To use SPINNER, 1 file (XXX.yaml) and 2 directories (input directory and src) are required.
-
-### input file (XXX.yaml; XXX is named by the user)
-Parameter list to control SPINNER code is listed in XXX.yaml. 
-The simplest form of input.yaml is described below:
-```YAML
-# XXX.yaml
-
-  input_dir:        input_directory_name
-  output_dir:       output_directory_name
-  initial_volume:   326.0
-  structure:
-      generation: 400
-  material:
-      Li:  4
-      Hf:  2
-      N:   4
-```
-
-### input directory
-In input directory (input_dir: in input file), LAMMPS potential file should be located. (Potential file have to be named potential.) Potential should be SIMPLE-NN format (https://github.com/MDIL-SNU/SIMPLE-NN).
-
-### src directory
-src directory should be in the running directory. You can copy and paste the src directory to each running directory or you can run multiple calculations in one running folder.
