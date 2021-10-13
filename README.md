@@ -4,12 +4,11 @@ SPINNER(Structure Prediction of Inorganic crystals using Neural Network potentia
 If you use SPINNER, please cite this paper: S. Kang et al. Accelerated identification of equilibrium structures of multicomponent inorganic crystals using machine learning potentials (arXiv:2107.02594).
 
 Here we describe minimal instructions for running SPINNER.
-If you want more information such as tuning parameters, please visit our online manual(https://spinner-csp.readthedocs.io)
+If you want more information such as tuning parameters, please visit our online [manual](https://spinner-csp.readthedocs.io).
 
 ## Requirement
-- LAMMPS 29Oct2020 or later
-- randSpg
-- SIMPLE-NN `81761d0` or later (if needed)
+- [LAMMPS](https://www.lammps.org) 29Oct2020 or later
+- [randSpg](https://github.com/xtalopt/randSpg)
 
 ## Install
 1. LAMMPS
@@ -29,7 +28,7 @@ If you want more information such as tuning parameters, please visit our online 
   make -j3
 ```
  
-3. `CMakeLists.txt`.
+3. `CMakeLists.txt`
 ``` bash
 SET ( LMP_PATH /path/to/lammps )
 SET ( RANDSPG_PATH /path/to/randspg )

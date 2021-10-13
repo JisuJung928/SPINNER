@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
 #include <cstring>
-#include <string>
 #include "input.h"
 
 
@@ -23,6 +22,23 @@ void Input::read(string filename)
             }
             if (strncmp(ptr, "#", 1) == 0) {
                 continue;
+            } else if (strcmp(ptr, "ELEMENT") == 0) {
+                strtok(nullptr, " \n\t");
+                ptr = strtok(nullptr, " \n\t");
+                while (ptr != nullptr) {
+                    element.push_back(string(ptr));
+                    ptr = strtok(nullptr, " \n");
+                }
+            } else if (strcmp(ptr, "COMPOSITION") == 0) {
+                strtok(nullptr, " \n\t");
+                ptr = strtok(nullptr, " \n\t");
+                while (ptr != nullptr) {
+                    composition.push_back(atoi(ptr));
+                    ptr = strtok(nullptr, " \n");
+                }
+            } else if (strcmp(ptr, "Z_NUMBER") == 0) {
+                strtok(nullptr, " \n\t");
+                z_number = atoi(strtok(nullptr, " \n"));
             } else if (strcmp(ptr, "GENERATION") == 0) {
                 strtok(nullptr, " \n\t");
                 generation = atoi(strtok(nullptr, " \n"));

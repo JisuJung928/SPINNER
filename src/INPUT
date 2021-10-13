@@ -1,3 +1,8 @@
+# Formula
+ELEMENT = Be Li O
+COMPOSITION = 1 2 2
+Z_NUMBER = 4
+
 # Evolution
 GENERATION = 10
 POPULATION = 10
