@@ -8,8 +8,9 @@ class Input
 {
     private:
         vector<string> element;
-        vector<int> composition;
+        vector<uint> composition;
         int z_number;
+        double volume;
 
         int generation;
         int population;
@@ -17,39 +18,65 @@ class Input
         string pot_path;
 
     public:
-        void init()
+        /* setter */
+        void set_element(const vector<string> &v)
         {
-            generation = 1;
-            population = 1;
-            pot_path = "./potential_saved";
+            element = v;
         }
-        void read(string);
-        /* for debug */
-        vector<string> get_element()
+        void set_composition(const vector<uint> &v)
+        {
+            composition = v;
+        }
+        void set_z_number(int i)
+        {
+            z_number = i;
+        }
+        void set_volume(double d)
+        {
+            volume = d;
+        }
+        void set_generation(int i)
+        {
+            generation = i;
+        }
+        void set_population(int i)
+        {
+            population = i;
+        }
+        void set_pot_path(const string &s)
+        {
+            pot_path = s;
+        }
+        /* getter */
+        vector<string> get_element() const
         {
             return element;
         }
-        vector<int> get_composition()
+        vector<uint> get_composition() const
         {
             return composition;
         }
-        int get_z_number()
+        int get_z_number() const
         {
             return z_number;
         }
-        int get_generation()
+        double get_volume() const
+        {
+            return volume;
+        }
+        int get_generation() const
         {
             return generation;
         }
-        int get_population()
+        int get_population() const
         {
             return population;
         }
-        string get_pot_path()
+        string get_pot_path() const
         {
             return pot_path;
         }
 };
-
+void read_input(Input &, string);
 
 #endif

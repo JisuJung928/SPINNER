@@ -1,7 +1,8 @@
-# Formula
+# Structure
 ELEMENT = Be Li O
 COMPOSITION = 1 2 2
 Z_NUMBER = 4
+VOLUME = 200.0
 
 # Evolution
 GENERATION = 10

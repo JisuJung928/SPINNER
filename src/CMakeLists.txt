@@ -9,7 +9,7 @@ SET ( PROJECT_VERSION_MINOR 1 )
 SET ( CMAKE_VERBOSE_MAKEFILE true )
 SET ( SRC_FILES 
         main.cpp
-        generate_config.cpp
+        config.cpp
         input.cpp )
 SET ( CMAKE_CXX_COMPILER "mpicxx" )
 
