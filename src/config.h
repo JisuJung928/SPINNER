@@ -7,6 +7,5 @@
 #include "input.h"
 
 using namespace std;
-void generate(Input);
-//Crystal generate(string);
+Crystal generate(Input);
 #endif

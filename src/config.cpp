@@ -3,24 +3,8 @@
 
 #define MAXLINE 256
 using namespace std;
-void generate(Input input)
+Crystal generate(Input input)
 {
-    /* original
-    RandSpgOptions options = RandSpgOptions::readOptions(filename);
-
-    vector<uint> atoms;
-    string comp = options.getComposition();
-
-    ElemInfo::readComposition(comp, atoms);
-
-    latticeStruct mins = options.getLatticeMins();
-    latticeStruct maxes = options.getLatticeMaxes();
-
-    randSpgInput input(1, atoms, mins, maxes);
-
-    Crystal c = RandSpg::randSpgCrystal(input);
-    */
-
     string comp = "";
     vector<string> element = input.get_element();
     vector<uint> composition = input.get_composition();
@@ -32,11 +16,13 @@ void generate(Input input)
     vector<uint> atoms;
     ElemInfo::readComposition(comp, atoms);
 
-    /* test 
-    string config_name = "./POSCAR";
-    string title = "./TEST_CONFIG";
-    c.writePOSCAR(config_name, title);
+    latticeStruct lmin = latticeStruct(3.0, 3.0, 3.0, 60.0, 60.0, 60.0);
+    latticeStruct lmax = latticeStruct(10.0, 10.0, 10.0, 120.0, 120.0, 120.0);
+
+
+    randSpgInput spg_input(1, atoms, lmin, lmax);
+    /* caution: sort automatically */
+    Crystal c = RandSpg::randSpgCrystal(spg_input);
 
     return c;
-    */
 }
