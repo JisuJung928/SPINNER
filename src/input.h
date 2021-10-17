@@ -17,6 +17,8 @@ class Input
 
         string pot_path;
 
+        int random_seed;
+
     public:
         /* setter */
         void set_element(const vector<string> &v)
@@ -47,6 +49,10 @@ class Input
         {
             pot_path = s;
         }
+        void set_random_seed(int i)
+        {
+            random_seed = i;
+        }
         /* getter */
         vector<string> get_element() const
         {
@@ -76,7 +82,11 @@ class Input
         {
             return pot_path;
         }
+        int get_random_seed() const
+        {
+            return random_seed;
+        }
 };
-void read_input(Input &, string);
+Input read_input(string);
 
 #endif

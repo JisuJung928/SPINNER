@@ -10,3 +10,6 @@ POPULATION = 10
 
 # Potential
 POT_PATH = ./potential_saved
+
+# Random
+RANDOM_SEED = -1

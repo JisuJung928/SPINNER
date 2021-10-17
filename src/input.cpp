@@ -6,8 +6,9 @@
 
 #define MAXLINE 256
 using namespace std;
-void read_input(Input &input, string filename)
+Input read_input(string filename)
 {
+    Input input;
     char *ptr, line[MAXLINE];
 
     ifstream fp;
@@ -55,6 +56,9 @@ void read_input(Input &input, string filename)
             } else if (strcmp(ptr, "POT_PATH") == 0) {
                 strtok(nullptr, " \n\t");
                 input.set_pot_path(string(strtok(nullptr, " \n")));
+            } else if (strcmp(ptr, "RANDOM_SEED") == 0) {
+                strtok(nullptr, " \n\t");
+                input.set_random_seed(atoi(strtok(nullptr, " \n")));
             } else {
                 cout << "Check the input tag!" << endl;
             }
@@ -63,4 +67,6 @@ void read_input(Input &input, string filename)
         cout << "Check the filename!" << endl;
     }
     fp.close();
+
+    return input;
 }
