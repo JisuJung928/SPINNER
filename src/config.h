@@ -6,5 +6,7 @@
 #include "input.h"
 
 using namespace std;
-vector<Crystal> generate(Input);
+vector<Crystal> GenerateCrystal(Input);
+void SortCrystal(Crystal *, vector<uint>);
+// TODO: WriteConfig
 #endif

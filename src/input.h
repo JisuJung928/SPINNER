@@ -15,78 +15,78 @@ class Input
         int generation;
         int population;
 
-        string pot_path;
+        string potential_path;
 
         int random_seed;
 
     public:
         /* setter */
-        void set_element(const vector<string> &v)
+        void SetElement(const vector<string> &v)
         {
             element = v;
         }
-        void set_composition(const vector<uint> &v)
+        void SetComposition(const vector<uint> &v)
         {
             composition = v;
         }
-        void set_z_number(int i)
+        void SetZnumber(int i)
         {
             z_number = i;
         }
-        void set_volume(double d)
+        void SetVolume(double d)
         {
             volume = d;
         }
-        void set_generation(int i)
+        void SetGeneration(int i)
         {
             generation = i;
         }
-        void set_population(int i)
+        void SetPopulation(int i)
         {
             population = i;
         }
-        void set_pot_path(const string &s)
+        void SetPotentialPath(const string &s)
         {
-            pot_path = s;
+            potential_path = s;
         }
-        void set_random_seed(int i)
+        void SetRandomSeed(int i)
         {
             random_seed = i;
         }
         /* getter */
-        vector<string> get_element() const
+        vector<string> GetElement() const
         {
             return element;
         }
-        vector<uint> get_composition() const
+        vector<uint> GetComposition() const
         {
             return composition;
         }
-        int get_z_number() const
+        int GetZnumber() const
         {
             return z_number;
         }
-        double get_volume() const
+        double GetVolume() const
         {
             return volume;
         }
-        int get_generation() const
+        int GetGeneration() const
         {
             return generation;
         }
-        int get_population() const
+        int GetPopulation() const
         {
             return population;
         }
-        string get_pot_path() const
+        string GetPotentialPath() const
         {
-            return pot_path;
+            return potential_path;
         }
-        int get_random_seed() const
+        int GetRandomSeed() const
         {
             return random_seed;
         }
 };
-Input read_input(string);
+Input ReadInput(string);
 
 #endif

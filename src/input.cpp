@@ -3,10 +3,9 @@
 #include <cstring>
 #include "input.h"
 
-
 #define MAXLINE 256
 using namespace std;
-Input read_input(string filename)
+Input ReadInput(string filename)
 {
     Input input;
     char *ptr, line[MAXLINE];
@@ -31,7 +30,7 @@ Input read_input(string filename)
                     element.push_back(string(ptr));
                     ptr = strtok(nullptr, " \n");
                 }
-                input.set_element(element);
+                input.SetElement(element);
             } else if (strcmp(ptr, "COMPOSITION") == 0) {
                 strtok(nullptr, " \n\t");
                 ptr = strtok(nullptr, " \n\t");
@@ -40,25 +39,25 @@ Input read_input(string filename)
                     composition.push_back(atoi(ptr));
                     ptr = strtok(nullptr, " \n");
                 }
-                input.set_composition(composition);
+                input.SetComposition(composition);
             } else if (strcmp(ptr, "Z_NUMBER") == 0) {
                 strtok(nullptr, " \n\t");
-                input.set_z_number(atoi(strtok(nullptr, " \n")));
+                input.SetZnumber(atoi(strtok(nullptr, " \n")));
             } else if (strcmp(ptr, "VOLUME") == 0) {
                 strtok(nullptr, " \n\t");
-                input.set_volume(atof(strtok(nullptr, " \n")));
+                input.SetVolume(atof(strtok(nullptr, " \n")));
             } else if (strcmp(ptr, "GENERATION") == 0) {
                 strtok(nullptr, " \n\t");
-                input.set_generation(atoi(strtok(nullptr, " \n")));
+                input.SetGeneration(atoi(strtok(nullptr, " \n")));
             } else if (strcmp(ptr, "POPULATION") == 0) {
                 strtok(nullptr, " \n\t");
-                input.set_population(atoi(strtok(nullptr, " \n")));
+                input.SetPopulation(atoi(strtok(nullptr, " \n")));
             } else if (strcmp(ptr, "POT_PATH") == 0) {
                 strtok(nullptr, " \n\t");
-                input.set_pot_path(string(strtok(nullptr, " \n")));
+                input.SetPotentialPath(string(strtok(nullptr, " \n")));
             } else if (strcmp(ptr, "RANDOM_SEED") == 0) {
                 strtok(nullptr, " \n\t");
-                input.set_random_seed(atoi(strtok(nullptr, " \n")));
+                input.SetRandomSeed(atoi(strtok(nullptr, " \n")));
             } else {
                 cout << "Check the input tag!" << endl;
             }

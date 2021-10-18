@@ -7,7 +7,7 @@ Here we describe minimal instructions for running SPINNER.
 If you want more information such as tuning parameters, please visit our online [manual](https://spinner-csp.readthedocs.io).
 
 ## Requirement
-- [LAMMPS](https://www.lammps.org) 29Oct2020 or later
+- [LAMMPS](https://www.lammps.org) `29Oct2020` or later
 - [randSpg](https://github.com/xtalopt/randSpg)
 
 ## Install
