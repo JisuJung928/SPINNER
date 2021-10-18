@@ -10,6 +10,7 @@ class Input
         vector<string> element;
         vector<uint> composition;
         int z_number;
+        unsigned int nelement;
         double volume;
 
         int generation;
@@ -32,6 +33,10 @@ class Input
         void SetZnumber(int i)
         {
             z_number = i;
+        }
+        void SetNelement(int i)
+        {
+            nelement = i;
         }
         void SetVolume(double d)
         {
@@ -65,6 +70,10 @@ class Input
         int GetZnumber() const
         {
             return z_number;
+        }
+        unsigned int GetNelement() const
+        {
+            return nelement;
         }
         double GetVolume() const
         {

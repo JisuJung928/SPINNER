@@ -7,6 +7,6 @@
 
 #include "input.h"
 
-void *LammpsInit(Input, Crystal);
+void *LammpsInit(Input, Crystal, int, char **);
 void *Relax(Input, Crystal &);
 #endif

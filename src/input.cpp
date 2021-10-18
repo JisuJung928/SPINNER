@@ -31,6 +31,7 @@ Input ReadInput(string filename)
                     ptr = strtok(nullptr, " \n");
                 }
                 input.SetElement(element);
+                input.SetNelement(input.GetElement().size());
             } else if (strcmp(ptr, "COMPOSITION") == 0) {
                 strtok(nullptr, " \n\t");
                 ptr = strtok(nullptr, " \n\t");
