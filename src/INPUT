@@ -4,12 +4,16 @@ COMPOSITION = 1 2 2
 Z_NUMBER = 4
 VOLUME = 200.0
 
+# Potential
+PAIR_STYLE = nn
+PAIR_COEFF = * * potential_saved Be Li O
+
+# Calculation
+MAX_FORCE = 0.02
+
 # Evolution
 GENERATION = 10
 POPULATION = 10
-
-# Potential
-POT_PATH = ./potential_saved
 
 # Random
 RANDOM_SEED = -1

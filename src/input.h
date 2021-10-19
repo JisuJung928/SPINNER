@@ -1,5 +1,6 @@
 #ifndef __INPUT_H__
 #define __INPUT_H__
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -7,6 +8,7 @@ using namespace std;
 class Input
 {
     private:
+        /* structure */
         vector<string> element;
         vector<int> composition;
         int z_number;
@@ -14,14 +16,50 @@ class Input
         double volume;
         vector<double> mass;
 
+        /* potential */
+        char *pair_style;
+        char *pair_coeff;
+
+        /* calculation */
+        double max_force;
+
+        /* evolution */
         int generation;
         int population;
 
-        string potential_path;
-
+        /* random */
         int random_seed;
 
     public:
+        Input()
+        {
+            /* structure */
+            element = vector<string>();
+            composition = vector<int>();
+            z_number = 1;
+            nelement = 1;
+            volume = 0.0;
+            mass = vector<double>();
+
+            /* potential */
+            pair_style = new char[128];
+            pair_coeff = new char[128];
+
+            /* calculation */
+            max_force = 0.02;
+
+            /* evolution */
+            generation = 1;
+            population = 1;
+
+            /* random */
+            random_seed = 0;
+        }
+        ~Input(){
+            delete []pair_style;
+            delete []pair_coeff;
+        }
+
         /* setter */
         void SetElement(const vector<string> &v)
         {
@@ -47,6 +85,18 @@ class Input
         {
             mass = v;
         }
+        void SetPairStyle(char *c)
+        {
+            strcpy(pair_style, c);
+        }
+        void SetPairCoeff(char *c)
+        {
+            strcpy(pair_coeff, c);
+        }
+        void SetMaxForce(double d)
+        {
+            max_force = d;
+        }
         void SetGeneration(int i)
         {
             generation = i;
@@ -54,10 +104,6 @@ class Input
         void SetPopulation(int i)
         {
             population = i;
-        }
-        void SetPotentialPath(const string &s)
-        {
-            potential_path = s;
         }
         void SetRandomSeed(int i)
         {
@@ -88,6 +134,18 @@ class Input
         {
             return mass;
         }
+        double GetMaxForce() const
+        {
+            return max_force;
+        }
+        char *GetPairStyle() const
+        {
+            return pair_style;
+        }
+        char *GetPairCoeff() const
+        {
+            return pair_coeff;
+        }
         int GetGeneration() const
         {
             return generation;
@@ -96,16 +154,12 @@ class Input
         {
             return population;
         }
-        string GetPotentialPath() const
-        {
-            return potential_path;
-        }
         int GetRandomSeed() const
         {
             return random_seed;
         }
 };
 double GetMassFromSymbol(string);
-Input ReadInput(string);
+Input *ReadInput(string);
 
 #endif

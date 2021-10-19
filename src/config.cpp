@@ -2,14 +2,14 @@
 #include "config.h"
 
 using namespace std;
-vector<Crystal> GenerateCrystal(Input input)
+vector<Crystal> GenerateCrystal(Input *input)
 {
     string comp = "";
-    vector<string> element = input.GetElement();
-    vector<int> composition = input.GetComposition();
+    vector<string> element = input->GetElement();
+    vector<int> composition = input->GetComposition();
     for (unsigned int i = 0; i < element.size(); ++i) {
         comp += element[i];
-        comp += to_string(composition[i] * input.GetZNumber());
+        comp += to_string(composition[i] * input->GetZNumber());
     }
 
     vector<uint> atoms;
@@ -39,13 +39,13 @@ vector<Crystal> GenerateCrystal(Input input)
     vector<Crystal> crystal_vector;
     random_device rd;
     mt19937 gen(rd());
-    int random_seed = input.GetRandomSeed();
+    int random_seed = input->GetRandomSeed();
     if (random_seed != -1) {
         gen.seed(random_seed);
     }
     uniform_int_distribution<int> dis(1, 230);
     int num_attempt = 0;
-    while (num_attempt < input.GetPopulation()) {
+    while (num_attempt < input->GetPopulation()) {
         randSpgInput randspg_input(dis(gen), atoms, lmin, lmax);
         /* Caution: sorted by # of types */
         Crystal crystal = RandSpg::randSpgCrystal(randspg_input);

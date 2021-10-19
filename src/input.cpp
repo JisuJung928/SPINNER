@@ -1,6 +1,5 @@
 #include <iostream>
 #include <fstream>
-#include <cstring>
 #include "input.h"
 
 
@@ -102,7 +101,6 @@ double GetMassFromSymbol(string symbol)
         "Pa",
         "U"
     };
-
     const vector<double> mass =
     {
         0.000,
@@ -210,9 +208,9 @@ double GetMassFromSymbol(string symbol)
 
 #define MAXLINE 256
 using namespace std;
-Input ReadInput(string filename)
+Input *ReadInput(string filename)
 {
-    Input input;
+    Input *input = new Input();
     char *ptr, line[MAXLINE];
 
     ifstream fp;
@@ -235,8 +233,8 @@ Input ReadInput(string filename)
                     element.push_back(string(ptr));
                     ptr = strtok(nullptr, " \n");
                 }
-                input.SetElement(element);
-                input.SetNelement(input.GetElement().size());
+                input->SetElement(element);
+                input->SetNelement(input->GetElement().size());
             } else if (strcmp(ptr, "COMPOSITION") == 0) {
                 strtok(nullptr, " \n\t");
                 ptr = strtok(nullptr, " \n\t");
@@ -245,25 +243,31 @@ Input ReadInput(string filename)
                     composition.push_back(atoi(ptr));
                     ptr = strtok(nullptr, " \n");
                 }
-                input.SetComposition(composition);
+                input->SetComposition(composition);
             } else if (strcmp(ptr, "Z_NUMBER") == 0) {
                 strtok(nullptr, " \n\t");
-                input.SetZNumber(atoi(strtok(nullptr, " \n")));
+                input->SetZNumber(atoi(strtok(nullptr, "\n")));
             } else if (strcmp(ptr, "VOLUME") == 0) {
                 strtok(nullptr, " \n\t");
-                input.SetVolume(atof(strtok(nullptr, " \n")));
+                input->SetVolume(atof(strtok(nullptr, "\n")));
+            } else if (strcmp(ptr, "PAIR_STYLE") == 0) {
+                strtok(nullptr, " \n\t");
+                input->SetPairStyle(strtok(nullptr, "\n"));
+            } else if (strcmp(ptr, "PAIR_COEFF") == 0) {
+                strtok(nullptr, " \n\t");
+                input->SetPairCoeff(strtok(nullptr, "\n"));
+            } else if (strcmp(ptr, "MAX_FORCE") == 0) {
+                strtok(nullptr, " \n\t");
+                input->SetMaxForce(atof(strtok(nullptr, "\n")));
             } else if (strcmp(ptr, "GENERATION") == 0) {
                 strtok(nullptr, " \n\t");
-                input.SetGeneration(atoi(strtok(nullptr, " \n")));
+                input->SetGeneration(atoi(strtok(nullptr, "\n")));
             } else if (strcmp(ptr, "POPULATION") == 0) {
                 strtok(nullptr, " \n\t");
-                input.SetPopulation(atoi(strtok(nullptr, " \n")));
-            } else if (strcmp(ptr, "POT_PATH") == 0) {
-                strtok(nullptr, " \n\t");
-                input.SetPotentialPath(string(strtok(nullptr, " \n")));
+                input->SetPopulation(atoi(strtok(nullptr, "\n")));
             } else if (strcmp(ptr, "RANDOM_SEED") == 0) {
                 strtok(nullptr, " \n\t");
-                input.SetRandomSeed(atoi(strtok(nullptr, " \n")));
+                input->SetRandomSeed(atoi(strtok(nullptr, "\n")));
             } else {
                 cout << "Check the input tag!" << endl;
             }
@@ -275,11 +279,11 @@ Input ReadInput(string filename)
 
     /* mass */
     vector<double> mass;
-    vector<string> element = input.GetElement();
-    for (int i = 0; i < input.GetNelement(); ++i) {
+    vector<string> element = input->GetElement();
+    for (int i = 0; i < input->GetNelement(); ++i) {
         mass.push_back(GetMassFromSymbol(element[i]));
     }
-    input.SetMass(mass);
+    input->SetMass(mass);
 
     return input;
 }
