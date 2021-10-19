@@ -6,10 +6,10 @@ vector<Crystal> GenerateCrystal(Input input)
 {
     string comp = "";
     vector<string> element = input.GetElement();
-    vector<uint> composition = input.GetComposition();
+    vector<int> composition = input.GetComposition();
     for (unsigned int i = 0; i < element.size(); ++i) {
         comp += element[i];
-        comp += to_string(composition[i] * input.GetZnumber());
+        comp += to_string(composition[i] * input.GetZNumber());
     }
 
     vector<uint> atoms;

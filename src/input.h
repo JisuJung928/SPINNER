@@ -8,10 +8,11 @@ class Input
 {
     private:
         vector<string> element;
-        vector<uint> composition;
+        vector<int> composition;
         int z_number;
-        unsigned int nelement;
+        int nelement;
         double volume;
+        vector<double> mass;
 
         int generation;
         int population;
@@ -26,11 +27,11 @@ class Input
         {
             element = v;
         }
-        void SetComposition(const vector<uint> &v)
+        void SetComposition(const vector<int> &v)
         {
             composition = v;
         }
-        void SetZnumber(int i)
+        void SetZNumber(int i)
         {
             z_number = i;
         }
@@ -41,6 +42,10 @@ class Input
         void SetVolume(double d)
         {
             volume = d;
+        }
+        void SetMass(const vector<double> &v)
+        {
+            mass = v;
         }
         void SetGeneration(int i)
         {
@@ -63,21 +68,25 @@ class Input
         {
             return element;
         }
-        vector<uint> GetComposition() const
+        vector<int> GetComposition() const
         {
             return composition;
         }
-        int GetZnumber() const
+        int GetZNumber() const
         {
             return z_number;
         }
-        unsigned int GetNelement() const
+        int GetNelement() const
         {
             return nelement;
         }
         double GetVolume() const
         {
             return volume;
+        }
+        vector<double> GetMass() const
+        {
+            return mass;
         }
         int GetGeneration() const
         {
@@ -96,6 +105,7 @@ class Input
             return random_seed;
         }
 };
+double GetMassFromSymbol(string);
 Input ReadInput(string);
 
 #endif

@@ -23,7 +23,7 @@ int main(int argc, char* argv[])
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    char *lmpargv[] = {"liblammps", "-screen", "none"};
+    char *lmpargv[] = {(char *)"liblammps", (char *)"-screen", (char *)"none"};
     int lmpargc = sizeof(lmpargv) / sizeof(char *);
     void *lmp = LammpsInit(input, crystal_vector[0], lmpargc, lmpargv);
     lammps_close(lmp);
