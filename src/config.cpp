@@ -1,6 +1,7 @@
 #include <random>
 #include "config.h"
 
+
 using namespace std;
 vector<Crystal> GenerateCrystal(Input *input)
 {
@@ -12,7 +13,7 @@ vector<Crystal> GenerateCrystal(Input *input)
         comp += to_string(composition[i] * input->GetZNumber());
     }
 
-    vector<uint> atoms;
+    vector<unsigned int> atoms;
     ElemInfo::readComposition(comp, atoms);
 
     latticeStruct lmin = latticeStruct(3.0, 3.0, 3.0, 60.0, 60.0, 60.0);
@@ -59,7 +60,7 @@ vector<Crystal> GenerateCrystal(Input *input)
     return crystal_vector;
 }
 
-void SortCrystal(Crystal *crystal, vector<uint> atoms)
+void SortCrystal(Crystal *crystal, vector<unsigned int> atoms)
 {
     vector<atomStruct> new_atoms;
     vector<atomStruct> old_atoms = crystal->getAtoms();

@@ -1,12 +1,12 @@
 #include <cmath>
-#include <iostream>
+#define _USE_MATH_DEFINES
+
 #define LAMMPS_LIB_MPI
 #include "library.h"
 #include "calculator.h"
 #include "crystal.h"
 
 
-#define _USE_MATH_DEFINES
 void *LammpsInit(Input *input, Crystal *crystal, int lmpargc, char **lmpargv)
 {
     /* split comm
@@ -110,6 +110,7 @@ void Relax(Input *input, Crystal *crystal)
     /* update positions */
     double *position = new double[3 * crystal->numAtoms()];
     lammps_gather_atoms(lmp, (char *)"x", 2, 3, position);
+    // TODO: cartesian to fractional
     /* delete LAMMPS instance */
     lammps_close(lmp);
 

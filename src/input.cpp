@@ -197,7 +197,7 @@ double GetMassFromSymbol(string symbol)
         231.04,
         238.03
     };
-    for (uint i = 0; i < symbols.size(); ++i) {
+    for (unsigned int i = 0; i < symbols.size(); ++i) {
         if (symbols[i] == symbol) {
             return mass[i];
         }

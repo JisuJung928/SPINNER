@@ -7,6 +7,6 @@
 
 using namespace std;
 vector<Crystal> GenerateCrystal(Input *);
-void SortCrystal(Crystal *, vector<uint>);
+void SortCrystal(Crystal *, vector<unsigned int>);
 // TODO: WriteConfig
 #endif
