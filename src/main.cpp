@@ -7,7 +7,7 @@
 #include "input.h"
 
 using namespace std;
-int main(int argc, char* argv[])
+int main(int argc, char** argv)
 {
     MPI_Init(&argc, &argv);
     int rank, size;
@@ -55,10 +55,6 @@ int main(int argc, char* argv[])
     }
     MPI_Bcast(&as[0], n_atoms, mpi_atomStruct, 0, MPI_COMM_WORLD);
 
-    cout << "rank: " << rank << "\n" << as[0].x << endl;
-    cout << "rank: " << rank << "\n" << as[0].y << endl;
-    cout << "rank: " << rank << "\n" << as[0].z << endl;
-
     /* latticeStruct type for MPI */
     MPI_Datatype ls_type[6] =
     {
@@ -89,12 +85,10 @@ int main(int argc, char* argv[])
     }
     MPI_Bcast(&ls, 1, mpi_latticeStruct, 0, MPI_COMM_WORLD);
 
-    cout << "rank: " << rank << "\n" << ls.a << endl;
-    cout << "rank: " << rank << "\n" << ls.a << endl;
-    cout << "rank: " << rank << "\n" << ls.a << endl;
-
+    /* target crystal */
     Crystal crystal = Crystal(ls, as);
     
+    /* relax */
     Relax(input, &crystal);
 
     delete input;
