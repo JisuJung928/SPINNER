@@ -1,3 +1,4 @@
+#include <cmath>
 #include <random>
 #include "config.h"
 
@@ -5,39 +6,8 @@
 using namespace std;
 vector<Crystal> GenerateCrystal(Input *input)
 {
-    string comp = "";
-    vector<string> element = input->GetElement();
-    vector<int> composition = input->GetComposition();
-    for (unsigned int i = 0; i < element.size(); ++i) {
-        comp += element[i];
-        comp += to_string(composition[i] * input->GetZNumber());
-    }
-
-    vector<unsigned int> atoms;
-    ElemInfo::readComposition(comp, atoms);
-
-    latticeStruct lmin = latticeStruct(3.0, 3.0, 3.0, 60.0, 60.0, 60.0);
-    latticeStruct lmax = latticeStruct(10.0, 10.0, 10.0, 120.0, 120.0, 120.0);
-
-    /* randSpgInput
-     * spg
-     * atoms
-     * latticeMins
-     * latticeMaxes
-     * IADScalingFactor
-     * minRadius
-     * manualAtomicRadii
-     * customMinIADs
-     * minVolume
-     * maxVolume
-     * forcedWyckAssignments
-     * verbosity
-     * maxAttempts 
-     * forceMostGeneralWyckPos
-     */
-
-    // TODO: Add input parameters
     vector<Crystal> crystal_vector;
+
     random_device rd;
     mt19937 gen(rd());
     int random_seed = input->GetRandomSeed();
@@ -45,15 +15,51 @@ vector<Crystal> GenerateCrystal(Input *input)
         gen.seed(random_seed);
     }
     uniform_int_distribution<int> dis(1, 230);
-    int num_attempt = 0;
-    while (num_attempt < input->GetPopulation()) {
-        randSpgInput randspg_input(dis(gen), atoms, lmin, lmax);
+
+    vector<unsigned int> atoms;
+    string comp = "";
+    vector<string> element = input->GetElement();
+    vector<int> composition = input->GetComposition();
+    for (unsigned int i = 0; i < element.size(); ++i) {
+        comp += element[i];
+        comp += to_string(composition[i] * input->GetZNumber());
+    }
+    ElemInfo::readComposition(comp, atoms);
+
+    double initial_volume = input->GetVolume();
+    double min_length = pow(initial_volume, 1.0/3) / 3;
+    double max_length = pow(initial_volume, 1.0/3) * 3;
+    latticeStruct lmin = latticeStruct(min_length,
+                                       min_length,
+                                       min_length,
+                                       30.0, 30.0, 30.0);
+    latticeStruct lmax = latticeStruct(max_length,
+                                       max_length,
+                                       max_length,
+                                       150.0, 150.0, 150.0);
+    double IADScalingFactor = 1.0;
+    double minRadius = 0.0;
+    // TODO: pairwise constraint
+    vector<pair<unsigned int, double>> manualAtomicRadii;
+    double minVolume = initial_volume * 0.9;
+    double maxVolume = initial_volume * 1.1;
+    vector<pair<unsigned int, char>> forcedWyckAssignments;
+    char verbosity = 'n';
+    int maxAttempts = 100;
+    bool forceMostGeneralWyckPos = false;
+
+    int n_population = 0;
+    while (n_population < input->GetPopulation()) {
+        randSpgInput tmp_input(dis(gen), atoms, lmin, lmax,
+                               IADScalingFactor, minRadius, manualAtomicRadii,
+                               minVolume, maxVolume, forcedWyckAssignments,
+                               verbosity, maxAttempts, forceMostGeneralWyckPos);
         /* Caution: sorted by # of types */
-        Crystal crystal = RandSpg::randSpgCrystal(randspg_input);
+        Crystal crystal = RandSpg::randSpgCrystal(tmp_input);
         if (crystal.getVolume() > 0) {
             SortCrystal(&crystal, atoms);
             crystal_vector.push_back(crystal);
-            num_attempt++;
+            n_population++;
         }
     }
 

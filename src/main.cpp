@@ -41,20 +41,6 @@ int main(int argc, char** argv)
     MPI_Type_create_struct(4, as_block, as_disp, as_type, &mpi_atomStruct);
     MPI_Type_commit(&mpi_atomStruct);
 
-    unsigned int n_atoms;
-    if (rank == 0) {
-        n_atoms = crystal_vector[0].numAtoms();
-    }
-    MPI_Bcast(&n_atoms, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
-
-    vector<atomStruct> as;
-    if (rank == 0) {
-        as = crystal_vector[0].getAtoms();
-    } else {
-        as.resize(n_atoms);
-    }
-    MPI_Bcast(&as[0], n_atoms, mpi_atomStruct, 0, MPI_COMM_WORLD);
-
     /* latticeStruct type for MPI */
     MPI_Datatype ls_type[6] =
     {
@@ -79,19 +65,36 @@ int main(int argc, char** argv)
     MPI_Type_create_struct(6, ls_block, ls_disp, ls_type, &mpi_latticeStruct);
     MPI_Type_commit(&mpi_latticeStruct);
 
-    latticeStruct ls;
-    if (rank == 0) {
-        ls = crystal_vector[0].getLattice();
-    }
-    MPI_Bcast(&ls, 1, mpi_latticeStruct, 0, MPI_COMM_WORLD);
+    unsigned int n_atoms;
+    for (int i = 0; i < input->GetPopulation(); ++i) {
+        if (rank == 0) {
+            n_atoms = crystal_vector[i].numAtoms();
+        }
+        MPI_Bcast(&n_atoms, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
-    /* target crystal */
-    Crystal crystal = Crystal(ls, as);
-    
-    /* relax */
-    Relax(input, &crystal);
+        vector<atomStruct> as;
+        if (rank == 0) {
+            as = crystal_vector[i].getAtoms();
+        } else {
+            as.resize(n_atoms);
+        }
+        MPI_Bcast(&as[0], n_atoms, mpi_atomStruct, 0, MPI_COMM_WORLD);
+
+        latticeStruct ls;
+        if (rank == 0) {
+            ls = crystal_vector[i].getLattice();
+        }
+        MPI_Bcast(&ls, 1, mpi_latticeStruct, 0, MPI_COMM_WORLD);
+
+        /* target crystal */
+        Crystal crystal = Crystal(ls, as);
+        
+        /* relax */
+        Relax(input, &crystal);
+    }
 
     delete input;
 
-    return 0;
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Finalize();
 }
