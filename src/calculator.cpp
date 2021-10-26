@@ -8,19 +8,14 @@
 #include "crystal.h"
 
 
-void *LammpsInit(Input *input, Crystal *crystal, int lmpargc, char **lmpargv)
+void *LammpsInit(Input *input, Crystal *crystal, MPI_Comm *comm, char *filename)
 {
-    /* split comm
-    int lammps;
-    if (me < nprocs_lammps) lammps = 1;
-    else lammps = MPI_UNDEFINED;
-    MPI_Comm comm_lammps;
-    MPI_Comm_split(MPI_COMM_WORLD,lammps,0,&comm_lammps);
-    */
-
     char cmd[256];
+    char *lmpargv[] = {(char *)"liblammps", (char *)"-screen", (char *)"none",
+                       (char *)"-log", filename};
+    int lmpargc = sizeof(lmpargv) / sizeof(char *);
     void *lmp = nullptr;
-    lmp = lammps_open(lmpargc, lmpargv, MPI_COMM_WORLD, nullptr);
+    lmp = lammps_open(lmpargc, lmpargv, *comm, nullptr);
 
     /* basic */
     const char *cmds[] = {"units metal",
@@ -100,14 +95,14 @@ void *LammpsInit(Input *input, Crystal *crystal, int lmpargc, char **lmpargv)
 }
 
 
-void Relax(Input *input, Crystal *crystal)
+double Relax(Input *input, Crystal *crystal, MPI_Comm *comm, int tag)
 {
     char cmd[256];
 
     /* create LAMMPS instance */
-    char *lmpargv[] = {(char *)"liblammps", (char *)"-screen", (char *)"none"};
-    int lmpargc = sizeof(lmpargv) / sizeof(char *);
-    void *lmp = LammpsInit(input, crystal, lmpargc, lmpargv);
+    char filename[256];
+    sprintf(filename, "log.lammps_%d", tag);
+    void *lmp = LammpsInit(input, crystal, comm, filename);
 
     /* minimize */
     lammps_command(lmp, "fix int all box/relax tri 0.0");
@@ -185,10 +180,16 @@ void Relax(Input *input, Crystal *crystal)
     latticeStruct ls = latticeStruct(a, b, c, alpha, beta, gamma);
     crystal->setLattice(ls);
 
+    /* oneshot */
+    lammps_command(lmp, "run 0");
+    double pe = lammps_get_thermo(lmp, "pe");
+
     /* delete LAMMPS instance */
     lammps_close(lmp);
 
     delete []position;
     delete []boxlo;
     delete []boxhi;
+
+    return pe;
 }

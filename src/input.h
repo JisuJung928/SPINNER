@@ -27,6 +27,9 @@ class Input
         int generation;
         int population;
 
+        /* parallelism */
+        int npar;
+
         /* random */
         int random_seed;
 
@@ -105,6 +108,10 @@ class Input
         {
             population = i;
         }
+        void SetNpar(int i)
+        {
+            npar = i;
+        }
         void SetRandomSeed(int i)
         {
             random_seed = i;
@@ -153,6 +160,10 @@ class Input
         int GetPopulation() const
         {
             return population;
+        }
+        int GetNpar() const
+        {
+            return npar;
         }
         int GetRandomSeed() const
         {

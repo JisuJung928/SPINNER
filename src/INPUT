@@ -12,8 +12,11 @@ PAIR_COEFF = * * potential_saved Be Li O
 MAX_FORCE = 0.02
 
 # Evolution
-GENERATION = 10
-POPULATION = 10
+GENERATION = 2
+POPULATION = 5
+
+# Parallelism
+NPAR = 2
 
 # Random
 RANDOM_SEED = -1

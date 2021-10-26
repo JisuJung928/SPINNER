@@ -119,6 +119,7 @@ Input *ReadInput(string filename)
     ifstream fp;
     fp.open(filename);
     if (fp.is_open()) {
+        // TODO: assertion
         while (!fp.eof()) {
             fp.getline(line, MAXLINE); 
             if (strcmp(line, "") == 0) {
@@ -168,6 +169,9 @@ Input *ReadInput(string filename)
             } else if (strcmp(ptr, "POPULATION") == 0) {
                 strtok(nullptr, " \n\t");
                 input->SetPopulation(atoi(strtok(nullptr, "\n")));
+            } else if (strcmp(ptr, "NPAR") == 0) {
+                strtok(nullptr, " \n\t");
+                input->SetNpar(atoi(strtok(nullptr, "\n")));
             } else if (strcmp(ptr, "RANDOM_SEED") == 0) {
                 strtok(nullptr, " \n\t");
                 input->SetRandomSeed(atoi(strtok(nullptr, "\n")));

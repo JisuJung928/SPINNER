@@ -1,9 +1,10 @@
 #ifndef __CALCULATOR_H__
 #define __CALCULATOR_H__
-#include "randSpg.h"
+#include <mpi.h>
 
+#include "randSpg.h"
 #include "input.h"
 
-void *LammpsInit(Input *, Crystal *, int, char **);
-void Relax(Input *, Crystal *);
+void *LammpsInit(Input *, Crystal *, MPI_Comm *, char *);
+double Relax(Input *, Crystal *, MPI_Comm *, int);
 #endif

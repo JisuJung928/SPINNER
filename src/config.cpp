@@ -4,7 +4,7 @@
 
 
 using namespace std;
-vector<Crystal> GenerateCrystal(Input *input)
+vector<Crystal> GenerateCrystal(Input *input, int n_crystal)
 {
     vector<Crystal> crystal_vector;
 
@@ -49,7 +49,7 @@ vector<Crystal> GenerateCrystal(Input *input)
     bool forceMostGeneralWyckPos = false;
 
     int n_population = 0;
-    while (n_population < input->GetPopulation()) {
+    while (n_population < n_crystal) {
         randSpgInput tmp_input(dis(gen), atoms, lmin, lmax,
                                IADScalingFactor, minRadius, manualAtomicRadii,
                                minVolume, maxVolume, forcedWyckAssignments,
