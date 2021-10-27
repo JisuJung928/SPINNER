@@ -169,6 +169,27 @@ Input *ReadInput(string filename)
             } else if (strcmp(ptr, "POPULATION") == 0) {
                 strtok(nullptr, " \n\t");
                 input->SetPopulation(atoi(strtok(nullptr, "\n")));
+            } else if (strcmp(ptr, "RANDOM_GEN") == 0) {
+                strtok(nullptr, " \n\t");
+                input->SetRandomGen(atof(strtok(nullptr, "\n")));
+            } else if (strcmp(ptr, "CROSSOVER") == 0) {
+                strtok(nullptr, " \n\t");
+                input->SetCrossover(atof(strtok(nullptr, "\n")));
+            } else if (strcmp(ptr, "PERMUTATION") == 0) {
+                strtok(nullptr, " \n\t");
+                input->SetPermutation(atof(strtok(nullptr, "\n")));
+            } else if (strcmp(ptr, "LATTICE_MUT") == 0) {
+                strtok(nullptr, " \n\t");
+                input->SetLatticeMut(atof(strtok(nullptr, "\n")));
+            } else if (strcmp(ptr, "CONSTRAINT") == 0) {
+                strtok(nullptr, " \n\t");
+                ptr = strtok(nullptr, " \n\t");
+                vector<double> constraint;
+                while (ptr != nullptr) {
+                    constraint.push_back(atof(ptr));
+                    ptr = strtok(nullptr, " \n");
+                }
+                input->SetConstraint(constraint);
             } else if (strcmp(ptr, "NPAR") == 0) {
                 strtok(nullptr, " \n\t");
                 input->SetNpar(atoi(strtok(nullptr, "\n")));

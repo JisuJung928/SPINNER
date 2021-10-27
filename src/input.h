@@ -27,6 +27,15 @@ class Input
         int generation;
         int population;
 
+        /* operator */
+        double random_gen;
+        double crossover;
+        double permutation;
+        double lattice_mut;
+
+        /* constraint */
+        vector<double> constraint;
+
         /* parallelism */
         int npar;
 
@@ -36,27 +45,8 @@ class Input
     public:
         Input()
         {
-            /* structure */
-            element = vector<string>();
-            composition = vector<int>();
-            z_number = 1;
-            nelement = 1;
-            volume = 0.0;
-            mass = vector<double>();
-
-            /* potential */
             pair_style = new char[128];
             pair_coeff = new char[128];
-
-            /* calculation */
-            max_force = 0.02;
-
-            /* evolution */
-            generation = 1;
-            population = 1;
-
-            /* random */
-            random_seed = 0;
         }
         ~Input(){
             delete []pair_style;
@@ -107,6 +97,26 @@ class Input
         void SetPopulation(int i)
         {
             population = i;
+        }
+        void SetRandomGen(double d)
+        {
+            random_gen = d;
+        }
+        void SetCrossover(double d)
+        {
+            crossover = d;
+        }
+        void SetPermutation(double d)
+        {
+            permutation = d;
+        }
+        void SetLatticeMut(double d)
+        {
+            lattice_mut = d;
+        }
+        void SetConstraint(const vector<double> &v)
+        {
+            constraint = v;
         }
         void SetNpar(int i)
         {
@@ -160,6 +170,26 @@ class Input
         int GetPopulation() const
         {
             return population;
+        }
+        double GetRandomGen() const
+        {
+            return random_gen;
+        }
+        double GetCrossover() const
+        {
+            return crossover;
+        }
+        double GetPermutation() const
+        {
+            return permutation;
+        }
+        double GetLatticeMut() const
+        {
+            return lattice_mut;
+        }
+        vector<double> GetConstraint() const
+        {
+            return constraint;
         }
         int GetNpar() const
         {

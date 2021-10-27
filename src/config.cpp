@@ -4,7 +4,7 @@
 
 
 using namespace std;
-vector<Crystal> GenerateCrystal(Input *input, int n_crystal)
+vector<Crystal> RandomGeneration(Input *input, int n_crystal)
 {
     vector<Crystal> crystal_vector;
 
@@ -63,6 +63,24 @@ vector<Crystal> GenerateCrystal(Input *input, int n_crystal)
         }
     }
 
+    return crystal_vector;
+}
+
+vector<Crystal> LatticeMutation(Input *input, int n_crystal)
+{
+    vector<Crystal> crystal_vector;
+    return crystal_vector;
+}
+
+vector<Crystal> Permutation(Input *input, int n_crystal)
+{
+    vector<Crystal> crystal_vector;
+    return crystal_vector;
+}
+
+vector<Crystal> Crossover(Input *input, int n_crystal)
+{
+    vector<Crystal> crystal_vector;
     return crystal_vector;
 }
 

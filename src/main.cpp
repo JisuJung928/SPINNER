@@ -84,17 +84,21 @@ int main(int argc, char** argv)
                    MPI_INFO_NULL, header_comm, &win);
 
     /* generate crystal */
-    vector<Crystal> crystal_vector;
-    vector<double> energy_vector;
-    for (int i = 0; i < input->GetGeneration(); ++i) {
-        if (i == 0) {
+    for (int gen = 0; gen < input->GetGeneration(); ++gen) {
+        vector<Crystal> crystal_vector;
+        vector<double> energy_vector;
+        if (gen == 0) {
             if (rank == 0) {
-                crystal_vector = GenerateCrystal(input, input->GetPopulation());
+                int population = input->GetPopulation();
+                crystal_vector = RandomGeneration(input, population);
             }
         } else {
             // TODO: evolution
             if (rank == 0) {
-                crystal_vector = GenerateCrystal(input, input->GetPopulation());
+                int population = input->GetPopulation();
+                double random_gen = input->GetRandomGen();
+                int random_num = (int)(population * random_gen);
+                crystal_vector = RandomGeneration(input, random_num);
             }
         }
         /* broadcast # of population from root */
@@ -136,7 +140,7 @@ int main(int argc, char** argv)
         }
 
         int add = 1;
-        Crystal crystal;
+        vector<int> crystal_index_vector;
         while (crystal_index < population - 1) {
             /* epoch start */
             MPI_Win_lock(MPI_LOCK_EXCLUSIVE, 0, 0, win);
@@ -151,6 +155,7 @@ int main(int argc, char** argv)
 
             /* Caution: local rank */
             MPI_Bcast(&crystal_index, 1, MPI_INT, 0, lammps_comm);
+            crystal_index_vector.push_back(crystal_index);
 
             /* broadcast the crystal from root of lammps_comm to others */
             if (local_rank == 0) {
@@ -170,6 +175,7 @@ int main(int argc, char** argv)
             }
             MPI_Bcast(&ls, 1, mpi_latticeStruct, 0, lammps_comm);
 
+            Crystal crystal;
             if (local_rank == 0) {
                 crystal = crystal_vector[crystal_index];
             } else {
@@ -179,6 +185,9 @@ int main(int argc, char** argv)
             /* relax */
             double energy = Relax(input, &crystal, &lammps_comm, group_index);
             energy_vector.push_back(energy);
+            if (local_rank == 0) {
+                crystal_vector[crystal_index] = crystal;
+            }
 
             /* update crystal_index */
             MPI_Win_lock(MPI_LOCK_EXCLUSIVE, 0, 0, win);
@@ -188,10 +197,37 @@ int main(int argc, char** argv)
         }
         MPI_Barrier(MPI_COMM_WORLD);
 
+        /* gather */
+        if (local_rank == 0) {
+            /* send the number of crystals in each node */
+            int group_number = size / input->GetNpar();
+            int local_crystal = (int)crystal_index_vector.size();
+            int *global_crystal = new int[group_number]; 
+            MPI_Allgather(&local_crystal, 1, MPI_INT, 
+                          global_crystal, 1, MPI_INT, header_comm);
+
+            /* send the number of atoms in each crystal */
+            int *local_atom = new int[local_crystal];
+            int *global_atom = new int[crystal_vector.size()];
+            int *disp = new int[group_number]();
+            for (int j = 1; j < group_number; ++j) {
+                disp[j] = disp[j - 1] + global_crystal[j];
+            }
+            MPI_Gatherv(local_atom, local_crystal, MPI_INT,
+                        global_atom, global_crystal, disp, MPI_INT,
+                        0, header_comm);
+
+            /* send atomStruct vector */
+            /* send latticeStruct vector */
+            /* send energy vector */
+
+            delete []global_crystal;
+            delete []global_atom;
+        }
+
         /* initialize crystal_index */
         crystal_index = -1;
-
-        /* Allgather */
+        crystal_index_vector.clear();
     }
 
     delete input;
