@@ -47,6 +47,7 @@ class Input
         {
             pair_style = new char[128];
             pair_coeff = new char[128];
+            random_seed = -1;
         }
         ~Input(){
             delete []pair_style;

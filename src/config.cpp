@@ -4,10 +4,8 @@
 
 
 using namespace std;
-vector<Crystal> RandomGeneration(Input *input, int n_crystal)
+void RandomGeneration(Input *input, Crystal *crystal_list, int begin, int end)
 {
-    vector<Crystal> crystal_vector;
-
     random_device rd;
     mt19937 gen(rd());
     int random_seed = input->GetRandomSeed();
@@ -49,7 +47,7 @@ vector<Crystal> RandomGeneration(Input *input, int n_crystal)
     bool forceMostGeneralWyckPos = false;
 
     int n_population = 0;
-    while (n_population < n_crystal) {
+    while (n_population < end - begin) {
         randSpgInput tmp_input(dis(gen), atoms, lmin, lmax,
                                IADScalingFactor, minRadius, manualAtomicRadii,
                                minVolume, maxVolume, forcedWyckAssignments,
@@ -58,30 +56,22 @@ vector<Crystal> RandomGeneration(Input *input, int n_crystal)
         Crystal crystal = RandSpg::randSpgCrystal(tmp_input);
         if (crystal.getVolume() > 0) {
             SortCrystal(&crystal, atoms);
-            crystal_vector.push_back(crystal);
+            crystal_list[n_population] = crystal;
             n_population++;
         }
     }
-
-    return crystal_vector;
 }
 
-vector<Crystal> LatticeMutation(Input *input, int n_crystal)
+void LatticeMutation(Input *input, Crystal *crystal_list, int begin, int end)
 {
-    vector<Crystal> crystal_vector;
-    return crystal_vector;
 }
 
-vector<Crystal> Permutation(Input *input, int n_crystal)
+void Permutation(Input *input, int n_crystal)
 {
-    vector<Crystal> crystal_vector;
-    return crystal_vector;
 }
 
-vector<Crystal> Crossover(Input *input, int n_crystal)
+void Crossover(Input *input, int n_crystal)
 {
-    vector<Crystal> crystal_vector;
-    return crystal_vector;
 }
 
 void SortCrystal(Crystal *crystal, vector<unsigned int> atoms)
@@ -97,5 +87,6 @@ void SortCrystal(Crystal *crystal, vector<unsigned int> atoms)
             } 
         }
     }
+    vector<atomStruct> ().swap(old_atoms);
     crystal->setAtoms(new_atoms);
 }

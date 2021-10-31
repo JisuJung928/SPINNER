@@ -6,10 +6,10 @@
 #include "input.h"
 
 using namespace std;
-vector<Crystal> RandomGeneration(Input *, int);
-vector<Crystal> LatticeMutation(Input *, int);
-vector<Crystal> Permutation(Input *, int);
-vector<Crystal> Crossover(Input *, int);
+void RandomGeneration(Input *, Crystal *, int, int);
+void LatticeMutation(Input *, Crystal *, int, int);
+void Permutation(Input *, Crystal *, int, int);
+void Crossover(Input *, Crystal *, int, int);
 void SortCrystal(Crystal *, vector<unsigned int>);
 // TODO: WriteConfig
 #endif

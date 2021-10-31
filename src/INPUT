@@ -12,7 +12,7 @@ PAIR_COEFF  = * * potential_saved Be Li O
 MAX_FORCE   = 0.02
 
 # Evolution
-GENERATION  = 2
+GENERATION  = 3
 POPULATION  = 5
 
 # Operator
@@ -27,7 +27,7 @@ LATTICE_MUT = 0.0
 CONSTRAINT  = 1.5 1.5 1.5 1.5 1.5 1.5
 
 # Parallelism
-NPAR = 2
+NPAR = 4
 
 # Random
-RANDOM_SEED = -1
+#RANDOM_SEED = 2

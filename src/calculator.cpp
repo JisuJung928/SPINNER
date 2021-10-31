@@ -15,6 +15,7 @@ void *LammpsInit(Input *input, Crystal *crystal, MPI_Comm *comm, char *filename)
                        (char *)"-log", filename};
     int lmpargc = sizeof(lmpargv) / sizeof(char *);
     void *lmp = nullptr;
+
     lmp = lammps_open(lmpargc, lmpargv, *comm, nullptr);
 
     /* basic */
@@ -31,7 +32,7 @@ void *LammpsInit(Input *input, Crystal *crystal, MPI_Comm *comm, char *filename)
     cell[0][1] = 0;
     cell[0][2] = 0;
     cell[1][0] = lattice.b * cos(lattice.gamma * M_PI / 180);
-    cell[1][1] = lattice.b * sin(lattice.gamma * M_PI / 180);
+    cell[1][1] = sqrt(lattice.b * lattice.b - cell[1][0] * cell[1][0]);
     cell[1][2] = 0;
     cell[2][0] = lattice.c * cos(lattice.beta * M_PI / 180);
     cell[2][1] = (lattice.b * lattice.c * cos(lattice.alpha * M_PI / 180)
@@ -48,9 +49,10 @@ void *LammpsInit(Input *input, Crystal *crystal, MPI_Comm *comm, char *filename)
     lammps_command(lmp, cmd);
 
     /* atoms */
-    int *id = new int[crystal->numAtoms()];
-    int *type = new int[crystal->numAtoms()];
-    double *position = new double[3 * crystal->numAtoms()];
+    int n_atoms = (int)crystal->numAtoms();
+    int *id = new int[n_atoms];
+    int *type = new int[n_atoms];
+    double *position = new double[3 * n_atoms];
 
     int z_number = input->GetZNumber();
     int nelement = input->GetNelement();
@@ -71,8 +73,7 @@ void *LammpsInit(Input *input, Crystal *crystal, MPI_Comm *comm, char *filename)
             i++; 
         }
     }
-    lammps_create_atoms(lmp, crystal->numAtoms(), id, type, position,
-                        nullptr, nullptr, 0);
+    lammps_create_atoms(lmp, n_atoms, id, type, position, nullptr, nullptr, 0);
 
     /* mass */
     vector<double> mass = input->GetMass();
@@ -99,6 +100,10 @@ double Relax(Input *input, Crystal *crystal, MPI_Comm *comm, int tag)
 {
     char cmd[256];
 
+    int size, rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
     /* create LAMMPS instance */
     char filename[256];
     sprintf(filename, "log.lammps_%d", tag);
@@ -106,8 +111,10 @@ double Relax(Input *input, Crystal *crystal, MPI_Comm *comm, int tag)
 
     /* minimize */
     lammps_command(lmp, "fix int all box/relax tri 0.0");
-    sprintf(cmd, "minimize 0 %f 1000 10000", input->GetMaxForce());
+    sprintf(cmd, "minimize 0 %f 10 100", input->GetMaxForce());
     lammps_command(lmp, cmd);
+
+    // TODO: two step
 
     /* update positions */
     double *position = new double[3 * crystal->numAtoms()];

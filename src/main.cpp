@@ -1,4 +1,4 @@
-#include <cstddef>
+#include <cstdlib>
 #include <iostream>
 #include <mpi.h>
 #include <unistd.h>
@@ -14,26 +14,6 @@ int main(int argc, char** argv)
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-
-    /* atomStruct type for MPI */
-    MPI_Datatype as_type[4] =
-    {
-        MPI_UNSIGNED,
-        MPI_DOUBLE,
-        MPI_DOUBLE,
-        MPI_DOUBLE
-    };
-    int as_block[4] = {1, 1, 1, 1};
-    MPI_Aint as_disp[4];
-
-    as_disp[0] = offsetof(atomStruct, atomicNum);
-    as_disp[1] = offsetof(atomStruct, x);
-    as_disp[2] = offsetof(atomStruct, y);
-    as_disp[3] = offsetof(atomStruct, z);
-
-    MPI_Datatype mpi_atomStruct;
-    MPI_Type_create_struct(4, as_block, as_disp, as_type, &mpi_atomStruct);
-    MPI_Type_commit(&mpi_atomStruct);
 
     /* latticeStruct type for MPI */
     MPI_Datatype ls_type[6] =
@@ -59,10 +39,31 @@ int main(int argc, char** argv)
     MPI_Type_create_struct(6, ls_block, ls_disp, ls_type, &mpi_latticeStruct);
     MPI_Type_commit(&mpi_latticeStruct);
 
+    /* atomStruct type for MPI */
+    MPI_Datatype as_type[4] =
+    {
+        MPI_UNSIGNED,
+        MPI_DOUBLE,
+        MPI_DOUBLE,
+        MPI_DOUBLE
+    };
+    int as_block[4] = {1, 1, 1, 1};
+    MPI_Aint as_disp[4];
+
+    as_disp[0] = offsetof(atomStruct, atomicNum);
+    as_disp[1] = offsetof(atomStruct, x);
+    as_disp[2] = offsetof(atomStruct, y);
+    as_disp[3] = offsetof(atomStruct, z);
+
+    MPI_Datatype mpi_atomStruct;
+    MPI_Type_create_struct(4, as_block, as_disp, as_type, &mpi_atomStruct);
+    MPI_Type_commit(&mpi_atomStruct);
+
     /* read input */
     Input *input = ReadInput("./INPUT");
 
     /* local MPI */
+    int group_number = size / input->GetNpar();
     int group_index = rank / input->GetNpar();
     int local_rank = rank % input->GetNpar();
     MPI_Comm lammps_comm;
@@ -79,162 +80,226 @@ int main(int argc, char** argv)
     MPI_Comm_split(MPI_COMM_WORLD, header, rank, &header_comm);
 
     MPI_Win win;
-    int crystal_index = -1;
-    MPI_Win_create(&crystal_index, (MPI_Aint)sizeof(int), sizeof(int),
-                   MPI_INFO_NULL, header_comm, &win);
+    int *global_index;
+    MPI_Win_allocate((MPI_Aint)sizeof(int), sizeof(int), MPI_INFO_NULL,
+                     MPI_COMM_WORLD, &global_index, &win);
+    *global_index = 0;
 
     /* generate crystal */
     for (int gen = 0; gen < input->GetGeneration(); ++gen) {
-        vector<Crystal> crystal_vector;
-        vector<double> energy_vector;
+        // TODO: population < group_number?
+        int population = input->GetPopulation();
+        Crystal *crystal_list = new Crystal[population];
         if (gen == 0) {
             if (rank == 0) {
-                int population = input->GetPopulation();
-                crystal_vector = RandomGeneration(input, population);
+                RandomGeneration(input, crystal_list, 0, population);
             }
         } else {
             // TODO: evolution
             if (rank == 0) {
-                int population = input->GetPopulation();
-                double random_gen = input->GetRandomGen();
-                int random_num = (int)(population * random_gen);
-                crystal_vector = RandomGeneration(input, random_num);
+                //double random_gen = input->GetRandomGen();
+                //int random_num = (int)(population * random_gen);
+                RandomGeneration(input, crystal_list, 0, population);
             }
         }
-        /* broadcast # of population from root */
-        int population;
-        if (rank == 0) {
-            population = (int)crystal_vector.size();
+
+        int total_n_atoms = 0;
+        for (auto i : input->GetComposition()) {
+            total_n_atoms += i * input->GetZNumber();
         }
-        MPI_Bcast(&population, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        total_n_atoms *= population;
+
+        /* global information */
+        double *global_energy = new double[population];
+        int *global_n_atoms = new int[population];
+        int *global_crystal = new int[group_number]; 
+        int *global_atom = new int[group_number];
+        latticeStruct *global_ls = new latticeStruct[population];
+        atomStruct *global_as = new atomStruct[total_n_atoms];
+
+        /* local information*/
+        double *local_energy = new double[population];
+        int *local_n_atoms = new int[population];
+        int local_crystal = 0;
+        int local_atom = 0;
+        latticeStruct *local_ls = new latticeStruct[population];
+        atomStruct *local_as = new atomStruct[total_n_atoms];
 
         /* broadcast all crystals from root to headers */
-        unsigned int n_atoms;
-        vector<atomStruct> as;
-        latticeStruct ls;
-        for (int j = 0; j < population; ++j) {
-            if (rank == 0) {
-                n_atoms = crystal_vector[j].numAtoms();
-            }
-            MPI_Bcast(&n_atoms, 1, MPI_UNSIGNED, 0, header_comm);
-
+        for (int pop = 0; pop < population; ++pop) {
+            int n_atoms;
             if (local_rank == 0) {
                 if (rank == 0) {
-                    as = crystal_vector[j].getAtoms();
+                    n_atoms = (int)(crystal_list[pop].numAtoms());
+                }
+                MPI_Bcast(&n_atoms, 1, MPI_INT, 0, header_comm);
+            }
+
+            latticeStruct ls;
+            if (local_rank == 0) {
+                if (rank == 0) {
+                    ls = crystal_list[pop].getLattice();
+                }
+                MPI_Bcast(&ls, 1, mpi_latticeStruct, 0, header_comm);
+            }
+
+            vector<atomStruct> as;
+            if (local_rank == 0) {
+                if (rank == 0) {
+                    as = crystal_list[pop].getAtoms();
                 } else {
                     as.resize(n_atoms);
                 }
                 MPI_Bcast(&as[0], n_atoms, mpi_atomStruct, 0, header_comm);
             }
 
-            if (local_rank == 0) {
-                if (rank == 0) {
-                    ls = crystal_vector[j].getLattice();
-                }
-                MPI_Bcast(&ls, 1, mpi_latticeStruct, 0, header_comm);
-            }
-
             if ((local_rank == 0) && (rank != 0)) {
-                crystal_vector.push_back(Crystal(ls, as));
+                crystal_list[pop] = Crystal(ls, as);
             }
         }
 
-        int add = 1;
-        vector<int> crystal_index_vector;
-        while (crystal_index < population - 1) {
-            /* epoch start */
-            MPI_Win_lock(MPI_LOCK_EXCLUSIVE, 0, 0, win);
-            /* flush the value in rank 0 */
-            MPI_Win_flush(0, win);
-            /* add 1 to the value in rank 0 */
-            MPI_Fetch_and_op(&add, &crystal_index, MPI_INT, 0, 0, MPI_SUM, win);
-            /* get the value from rank 0 */
-            MPI_Get(&crystal_index, 1, MPI_INT, 0, 0, 1, MPI_INT, win);
-            /* epoch end */
-            MPI_Win_unlock(0, win);
+        int n_atoms_acc = 0;
+        int local_index;
+        int one = 1;
+        while (1) {
+            /* passive syncronization */
+            if (local_rank == 0) {
+                MPI_Win_lock(MPI_LOCK_EXCLUSIVE, 0, 0, win);
+                MPI_Fetch_and_op(&one, &local_index, MPI_INT, 0, 0, MPI_SUM, win);
+                MPI_Win_unlock(0, win);
+            }
 
             /* Caution: local rank */
-            MPI_Bcast(&crystal_index, 1, MPI_INT, 0, lammps_comm);
-            crystal_index_vector.push_back(crystal_index);
+            MPI_Bcast(&local_index, 1, MPI_INT, 0, lammps_comm);
+            if (local_index >= population) {
+                break;
+            }
 
             /* broadcast the crystal from root of lammps_comm to others */
+            int n_atoms;
             if (local_rank == 0) {
-                n_atoms = crystal_vector[crystal_index].numAtoms();
+                n_atoms = (int)crystal_list[local_index].numAtoms();
+                local_n_atoms[local_crystal] = n_atoms;
+                local_atom += n_atoms;
             }
-            MPI_Bcast(&n_atoms, 1, MPI_UNSIGNED, 0, lammps_comm);
+            MPI_Bcast(&n_atoms, 1, MPI_INT, 0, lammps_comm);
 
+            vector<atomStruct> as;
             if (local_rank == 0) {
-                as = crystal_vector[crystal_index].getAtoms();
+                as = crystal_list[local_index].getAtoms();
             } else {
                 as.resize(n_atoms);
             }
             MPI_Bcast(&as[0], n_atoms, mpi_atomStruct, 0, lammps_comm);
 
+            latticeStruct ls;
             if (local_rank == 0) {
-                ls = crystal_vector[crystal_index].getLattice();
+                ls = crystal_list[local_index].getLattice();
             }
             MPI_Bcast(&ls, 1, mpi_latticeStruct, 0, lammps_comm);
 
             Crystal crystal;
             if (local_rank == 0) {
-                crystal = crystal_vector[crystal_index];
+                crystal = crystal_list[local_index];
             } else {
                 crystal = Crystal(ls, as);
             }
 
             /* relax */
             double energy = Relax(input, &crystal, &lammps_comm, group_index);
-            energy_vector.push_back(energy);
-            if (local_rank == 0) {
-                crystal_vector[crystal_index] = crystal;
+            local_energy[local_crystal] = energy;
+
+            as = crystal.getAtoms();
+            for (int i = 0; i < n_atoms; ++i) {
+                local_as[n_atoms_acc + i] = as[i];
             }
+            n_atoms_acc += n_atoms;
 
-            /* update crystal_index */
-            MPI_Win_lock(MPI_LOCK_EXCLUSIVE, 0, 0, win);
-            MPI_Win_flush(0, win);
-            MPI_Get(&crystal_index, 1, MPI_INT, 0, 0, 1, MPI_INT, win);
-            MPI_Win_unlock(0, win);
+            local_ls[local_crystal] = crystal.getLattice();
+
+            /* update local_crystal */
+            local_crystal++;
         }
-        MPI_Barrier(MPI_COMM_WORLD);
-
+        
         /* gather */
         if (local_rank == 0) {
             /* send the number of crystals in each node */
-            int group_number = size / input->GetNpar();
-            int local_crystal = (int)crystal_index_vector.size();
-            int *global_crystal = new int[group_number]; 
             MPI_Allgather(&local_crystal, 1, MPI_INT, 
                           global_crystal, 1, MPI_INT, header_comm);
 
+            /* send the number of atoms in each node  */
+            MPI_Gather(&local_atom, 1, MPI_INT,
+                       global_atom, 1, MPI_INT, 0, header_comm);
+
             /* send the number of atoms in each crystal */
-            int *local_atom = new int[local_crystal];
-            int *global_atom = new int[crystal_vector.size()];
             int *disp = new int[group_number]();
-            for (int j = 1; j < group_number; ++j) {
-                disp[j] = disp[j - 1] + global_crystal[j];
+            for (int i = 1; i < group_number; ++i) {
+                disp[i] = disp[i - 1] + global_crystal[i - 1];
             }
-            MPI_Gatherv(local_atom, local_crystal, MPI_INT,
-                        global_atom, global_crystal, disp, MPI_INT,
+
+            MPI_Allgatherv(local_n_atoms, local_crystal, MPI_INT,
+                           global_n_atoms, global_crystal, disp, MPI_INT,
+                           header_comm);
+
+            /* send energy vector */
+            MPI_Gatherv(local_energy, local_crystal, MPI_DOUBLE,
+                        global_energy, global_crystal, disp, MPI_DOUBLE,
+                        0, header_comm);
+
+            /* send latticeStruct vector */
+            MPI_Gatherv(local_ls, local_crystal, mpi_latticeStruct,
+                        global_ls, global_crystal, disp, mpi_latticeStruct,
                         0, header_comm);
 
             /* send atomStruct vector */
-            /* send latticeStruct vector */
-            /* send energy vector */
+            for (int i = 1; i < group_number; ++i) {
+                disp[i] = disp[i - 1] + global_atom[i - 1];
+            }
+            MPI_Gatherv(local_as, local_atom, mpi_atomStruct,
+                        global_as, global_atom, disp, mpi_atomStruct,
+                        0, header_comm);
 
-            delete []global_crystal;
-            delete []global_atom;
+            delete []disp;
         }
 
-        /* initialize crystal_index */
-        crystal_index = -1;
-        crystal_index_vector.clear();
+        if (rank == 0) {
+            n_atoms_acc = 0;
+            for (int i = 0; i < population; ++i) {
+                vector<atomStruct> as;
+                as.reserve(global_n_atoms[i]);
+                for (int j = 0; j < global_n_atoms[i]; ++j) {
+                    as[j] = global_as[n_atoms_acc + j];
+                }
+                n_atoms_acc += global_n_atoms[i];
+                crystal_list[i].setAtoms(as);
+                crystal_list[i].setLattice(global_ls[i]);
+            }
+            // TODO: sort by energy
+        }
+
+        /* initialize global_index */
+        *global_index = 0;
+
+        delete []crystal_list;
+
+        delete []global_energy;
+        delete []global_n_atoms;
+        delete []global_crystal;
+        delete []global_atom;
+        delete []global_ls;
+        delete []global_as;
+
+        delete []local_energy;
+        delete []local_n_atoms;
+        delete []local_ls;
+        delete []local_as;
     }
 
     delete input;
 
     MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Win_free(&win);
     MPI_Comm_free(&lammps_comm);
     MPI_Comm_free(&header_comm);
-    MPI_Win_free(&win);
     MPI_Finalize();
 }
