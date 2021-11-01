@@ -2,7 +2,6 @@
 #include <fstream>
 #include "input.h"
 
-
 double GetMassFromSymbol(string symbol)
 {
     const vector<pair<string, double>> mass =
@@ -163,6 +162,9 @@ Input *ReadInput(string filename)
             } else if (strcmp(ptr, "MAX_FORCE") == 0) {
                 strtok(nullptr, " \n\t");
                 input->SetMaxForce(atof(strtok(nullptr, "\n")));
+            } else if (strcmp(ptr, "RELAX_ITER") == 0) {
+                strtok(nullptr, " \n\t");
+                input->SetRelaxIteration(atoi(strtok(nullptr, "\n")));
             } else if (strcmp(ptr, "GENERATION") == 0) {
                 strtok(nullptr, " \n\t");
                 input->SetGeneration(atoi(strtok(nullptr, "\n")));

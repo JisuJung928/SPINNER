@@ -11,7 +11,8 @@ SET ( SRC_FILES
         main.cpp
         calculator.cpp
         config.cpp
-        input.cpp )
+        input.cpp
+        utils.cpp )
 SET ( CMAKE_CXX_COMPILER "mpicxx" )
 
 ADD_COMPILE_OPTIONS ( -O3 -g -Wall -std=c++11 )

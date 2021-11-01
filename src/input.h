@@ -22,6 +22,7 @@ class Input
 
         /* calculation */
         double max_force;
+        int relax_iter;
 
         /* evolution */
         int generation;
@@ -91,6 +92,10 @@ class Input
         {
             max_force = d;
         }
+        void SetRelaxIteration(int i)
+        {
+            relax_iter = i;
+        }
         void SetGeneration(int i)
         {
             generation = i;
@@ -155,6 +160,10 @@ class Input
         double GetMaxForce() const
         {
             return max_force;
+        }
+        int GetRelaxIteration() const
+        {
+            return relax_iter;
         }
         char *GetPairStyle() const
         {

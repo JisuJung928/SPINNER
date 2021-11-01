@@ -5,6 +5,6 @@
 #include "randSpg.h"
 #include "input.h"
 
-void *LammpsInit(Input *, Crystal *, MPI_Comm *, char *);
-double Relax(Input *, Crystal *, MPI_Comm *, int);
+void *LammpsInit(Input *, Crystal *, MPI_Comm *);
+double Relax(Input *, Crystal *, MPI_Comm *);
 #endif

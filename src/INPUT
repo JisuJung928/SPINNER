@@ -10,6 +10,7 @@ PAIR_COEFF  = * * potential_saved Be Li O
 
 # Calculation
 MAX_FORCE   = 0.02
+RELAX_ITER  = 5
 
 # Evolution
 GENERATION  = 3
@@ -23,11 +24,10 @@ LATTICE_MUT = 0.0
 
 # Constraint
 # order: 1-1, 1-2, ..., 1-N, 2-1, ..., N-N
-# no constraint: -1
 CONSTRAINT  = 1.5 1.5 1.5 1.5 1.5 1.5
 
 # Parallelism
-NPAR = 4
+NPAR = 2
 
 # Random
-#RANDOM_SEED = 2
+RANDOM_SEED = -1

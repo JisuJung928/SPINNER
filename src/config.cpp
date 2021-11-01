@@ -1,5 +1,7 @@
 #include <cmath>
 #include <random>
+#include "elemInfo.h"
+#include "randSpg.h"
 #include "config.h"
 
 
@@ -37,7 +39,6 @@ void RandomGeneration(Input *input, Crystal *crystal_list, int begin, int end)
                                        150.0, 150.0, 150.0);
     double IADScalingFactor = 1.0;
     double minRadius = 0.0;
-    // TODO: pairwise constraint
     vector<pair<unsigned int, double>> manualAtomicRadii;
     double minVolume = initial_volume * 0.9;
     double maxVolume = initial_volume * 1.1;

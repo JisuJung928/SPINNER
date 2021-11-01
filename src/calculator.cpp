@@ -1,16 +1,20 @@
 #include <cmath>
 #define _USE_MATH_DEFINES
-#include <iostream>
 
 #define LAMMPS_LIB_MPI
 #include "library.h"
 #include "calculator.h"
 #include "crystal.h"
 
-
-void *LammpsInit(Input *input, Crystal *crystal, MPI_Comm *comm, char *filename)
+void *LammpsInit(Input *input, Crystal *crystal, MPI_Comm *comm)
 {
     char cmd[256];
+    char filename[256];
+
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    sprintf(filename, "log.lammps_%d", rank);
+
     char *lmpargv[] = {(char *)"liblammps", (char *)"-screen", (char *)"none",
                        (char *)"-log", filename};
     int lmpargc = sizeof(lmpargv) / sizeof(char *);
@@ -96,25 +100,34 @@ void *LammpsInit(Input *input, Crystal *crystal, MPI_Comm *comm, char *filename)
 }
 
 
-double Relax(Input *input, Crystal *crystal, MPI_Comm *comm, int tag)
+double Relax(Input *input, Crystal *crystal, MPI_Comm *comm)
 {
     char cmd[256];
-
-    int size, rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-
     /* create LAMMPS instance */
-    char filename[256];
-    sprintf(filename, "log.lammps_%d", tag);
-    void *lmp = LammpsInit(input, crystal, comm, filename);
+    void *lmp = LammpsInit(input, crystal, comm);
 
-    /* minimize */
-    lammps_command(lmp, "fix int all box/relax tri 0.0");
-    sprintf(cmd, "minimize 0 %f 10 100", input->GetMaxForce());
+    /* minimization with fixed lattice */
+    sprintf(cmd, "minimize 0 %f %d %d", input->GetMaxForce(),
+            input->GetRelaxIteration(),
+            input->GetRelaxIteration() * 10);
     lammps_command(lmp, cmd);
 
-    // TODO: two step
+    /* oneshot */
+    lammps_command(lmp, "run 0");
+    double pe = lammps_get_thermo(lmp, "pe");
+    // TODO: criteria, restrain?
+    if (pe > 0) {
+        /* delete LAMMPS instance */
+        lammps_close(lmp);
+        return 0;
+    }
+
+    /* minimizationi with unfixed lattice */
+    lammps_command(lmp, "fix int all box/relax tri 0.0");
+    sprintf(cmd, "minimize 0 %f %d %d", input->GetMaxForce(),
+            input->GetRelaxIteration() * crystal->numAtoms(),
+            input->GetRelaxIteration() * crystal->numAtoms() * 10);
+    lammps_command(lmp, cmd);
 
     /* update positions */
     double *position = new double[3 * crystal->numAtoms()];
@@ -189,7 +202,7 @@ double Relax(Input *input, Crystal *crystal, MPI_Comm *comm, int tag)
 
     /* oneshot */
     lammps_command(lmp, "run 0");
-    double pe = lammps_get_thermo(lmp, "pe");
+    pe = lammps_get_thermo(lmp, "pe");
 
     /* delete LAMMPS instance */
     lammps_close(lmp);
