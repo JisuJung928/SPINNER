@@ -171,6 +171,18 @@ Input *ReadInput(string filename)
             } else if (strcmp(ptr, "POPULATION") == 0) {
                 strtok(nullptr, " \n\t");
                 input->SetPopulation(atoi(strtok(nullptr, "\n")));
+            } else if (strcmp(ptr, "MAX_POPULATION") == 0) {
+                strtok(nullptr, " \n\t");
+                input->SetMaxPopulation(atoi(strtok(nullptr, "\n")));
+            } else if (strcmp(ptr, "INIT_WINDOW") == 0) {
+                strtok(nullptr, " \n\t");
+                input->SetInitWindow(atof(strtok(nullptr, "\n")));
+            } else if (strcmp(ptr, "GENE_WINDOW") == 0) {
+                strtok(nullptr, " \n\t");
+                input->SetGeneWindow(atof(strtok(nullptr, "\n")));
+            } else if (strcmp(ptr, "BEST_WINDOW") == 0) {
+                strtok(nullptr, " \n\t");
+                input->SetBestWindow(atof(strtok(nullptr, "\n")));
             } else if (strcmp(ptr, "RANDOM_GEN") == 0) {
                 strtok(nullptr, " \n\t");
                 input->SetRandomGen(atof(strtok(nullptr, "\n")));

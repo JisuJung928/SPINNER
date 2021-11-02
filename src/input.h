@@ -27,6 +27,10 @@ class Input
         /* evolution */
         int generation;
         int population;
+        int max_population;
+        double init_window;
+        double gene_window;
+        double best_window;
 
         /* operator */
         double random_gen;
@@ -104,6 +108,22 @@ class Input
         {
             population = i;
         }
+        void SetMaxPopulation(int i)
+        {
+            max_population = i;
+        }
+        void SetInitWindow(double d)
+        {
+            init_window = d;
+        }
+        void SetGeneWindow(double d)
+        {
+            gene_window = d;
+        }
+        void SetBestWindow(double d)
+        {
+            best_window = d;
+        }
         void SetRandomGen(double d)
         {
             random_gen = d;
@@ -180,6 +200,22 @@ class Input
         int GetPopulation() const
         {
             return population;
+        }
+        int GetMaxPopulation() const
+        {
+            return max_population;
+        }
+        double GetInitWindow() const
+        {
+            return init_window;
+        }
+        double GetGeneWindow() const
+        {
+            return gene_window;
+        }
+        double GetBestWindow() const
+        {
+            return best_window;
         }
         double GetRandomGen() const
         {

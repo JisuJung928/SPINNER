@@ -6,6 +6,11 @@ PROJECT ( "SPINNER" )
 SET ( PROJECT_VERSION_MAJOR 1 )
 SET ( PROJECT_VERSION_MINOR 1 )
 
+find_package( MPI REQUIRED )
+if ( ${MPI_CXX_VERSION_MAJOR} LESS 3 )
+    message( FATAL_ERROR "MPI-3 is required." )
+endif()
+
 SET ( CMAKE_VERBOSE_MAKEFILE true )
 SET ( SRC_FILES 
         main.cpp
