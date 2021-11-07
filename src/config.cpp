@@ -14,17 +14,18 @@ void RandomGeneration(Input *input, Crystal *crystal_list, int begin, int end)
     if (random_seed != -1) {
         gen.seed(random_seed);
     }
-    uniform_int_distribution<int> dis(1, 230);
+    uniform_int_distribution<int> spg(1, 230);
 
     vector<unsigned int> atoms;
-    string comp = "";
+    string tmp_comp = "";
+    int z_number = input->GetZNumber();
     vector<string> element = input->GetElement();
     vector<int> composition = input->GetComposition();
     for (unsigned int i = 0; i < element.size(); ++i) {
-        comp += element[i];
-        comp += to_string(composition[i] * input->GetZNumber());
+        tmp_comp += element[i];
+        tmp_comp += to_string(composition[i] * z_number);
     }
-    ElemInfo::readComposition(comp, atoms);
+    ElemInfo::readComposition(tmp_comp, atoms);
 
     double initial_volume = input->GetVolume();
     double min_length = pow(initial_volume, 1.0/3) / 3;
@@ -47,91 +48,130 @@ void RandomGeneration(Input *input, Crystal *crystal_list, int begin, int end)
     int maxAttempts = 100;
     bool forceMostGeneralWyckPos = false;
 
-    int n_population = 0;
-    while (n_population < end - begin) {
-        randSpgInput tmp_input(dis(gen), atoms, lmin, lmax,
-                               IADScalingFactor, minRadius, manualAtomicRadii,
-                               minVolume, maxVolume, forcedWyckAssignments,
-                               verbosity, maxAttempts, forceMostGeneralWyckPos);
-        /* Caution: sorted by # of types */
-        Crystal crystal = RandSpg::randSpgCrystal(tmp_input);
-        if (crystal.getVolume() > 0) {
-            SortCrystal(&crystal, atoms);
-            crystal_list[begin + n_population] = crystal;
-            n_population++;
-        }
+    for (int n_crystal = 0; n_crystal < end - begin; ++n_crystal) {
+        Crystal crystal;
+        do {
+            randSpgInput tmp_input(spg(gen), atoms, lmin, lmax,
+                                   IADScalingFactor, minRadius,
+                                   manualAtomicRadii, minVolume, maxVolume,
+                                   forcedWyckAssignments, verbosity,
+                                   maxAttempts, forceMostGeneralWyckPos);
+            /* Caution: sorted by # of types */
+            crystal = RandSpg::randSpgCrystal(tmp_input);
+        } while (crystal.getVolume() == 0);
+        SortCrystal(&crystal, atoms);
+        crystal_list[begin + n_crystal] = crystal; 
     }
 }
 
-void LatticeMutation(Input *input, Crystal *crystal_list, int begin, int end)
+void Crossover(Input *input, Crystal *parent_list, int n_gene,
+               Crystal *crystal_list, int begin, int end)
+{
+}
+
+void Permutation(Input *input, Crystal *parent_list, int n_gene,
+                 Crystal *crystal_list, int begin, int end)
 {
     vector<unsigned int> atoms;
-    string comp = "";
+    string tmp_comp = "";
+    int z_number = input->GetZNumber();
     vector<string> element = input->GetElement();
     vector<int> composition = input->GetComposition();
     for (unsigned int i = 0; i < element.size(); ++i) {
-        comp += element[i];
-        comp += to_string(composition[i] * input->GetZNumber());
+        tmp_comp += element[i];
+        tmp_comp += to_string(composition[i] * z_number);
     }
-    ElemInfo::readComposition(comp, atoms);
+    ElemInfo::readComposition(tmp_comp, atoms);
 
-    int n_population = 0;
-    while (n_population < end - begin) {
-        /* do something */
-        Crystal crystal;
-        if (crystal.getVolume() > 0) {
-            SortCrystal(&crystal, atoms);
-            crystal_list[begin + n_population] = crystal;
-            n_population++;
+    random_device rd;
+    mt19937 gen(rd());
+    int random_seed = input->GetRandomSeed();
+    if (random_seed != -1) {
+        gen.seed(random_seed);
+    }
+    uniform_int_distribution<int> uni(0, n_gene - 1);
+    uniform_int_distribution<int> type(0, input->GetNelement() - 1);
+
+    for (int n_crystal = 0; n_crystal < end - begin; ++n_crystal) {
+        Crystal crystal = crystal_list[uni(gen)];
+        vector<atomStruct> as = crystal.getAtoms();
+        int i;
+        int j;
+        do {
+            i = type(gen); 
+            j = type(gen); 
+        } while (i == j);
+
+        int max_swap;
+        if (composition[i] > composition[j]) {
+            max_swap = composition[j] * z_number / 2;
+        } else {
+            max_swap = composition[i] * z_number / 2;
         }
+        uniform_int_distribution<int> swap(0, max_swap);
+        int n_swap = swap(gen);
+
+        // TODO: iter_swap;
+        SortCrystal(&crystal, atoms);
+        crystal_list[begin + n_crystal] = crystal;
     }
 }
 
-void Permutation(Input *input, Crystal *crystal_list, int begin, int end)
+void LatticeMutation(Input *input, Crystal *parent_list, int n_gene,
+                     Crystal *crystal_list, int begin, int end)
 {
-    vector<unsigned int> atoms;
-    string comp = "";
-    vector<string> element = input->GetElement();
-    vector<int> composition = input->GetComposition();
-    for (unsigned int i = 0; i < element.size(); ++i) {
-        comp += element[i];
-        comp += to_string(composition[i] * input->GetZNumber());
+    random_device rd;
+    mt19937 gen(rd());
+    int random_seed = input->GetRandomSeed();
+    if (random_seed != -1) {
+        gen.seed(random_seed);
     }
-    ElemInfo::readComposition(comp, atoms);
+    uniform_int_distribution<int> uni(0, n_gene - 1);
+    normal_distribution<double> norm(0, 0.1);
 
-    int n_population = 0;
-    while (n_population < end - begin) {
-        /* do something */
-        Crystal crystal;
-        if (crystal.getVolume() > 0) {
-            SortCrystal(&crystal, atoms);
-            crystal_list[begin + n_population] = crystal;
-            n_population++;
+    double epsilon;
+    for (int n_crystal = 0; n_crystal < end - begin; ++n_crystal) {
+        Crystal crystal = parent_list[uni(gen)];
+        latticeStruct ls = crystal.getLattice();
+        /* a */
+        epsilon = norm(gen);
+        while ((epsilon > 0.5) || (epsilon < -0.5)) {
+            epsilon = norm(gen);
         }
-    }
-}
-
-void Crossover(Input *input, Crystal *crystal_list, int begin, int end)
-{
-    vector<unsigned int> atoms;
-    string comp = "";
-    vector<string> element = input->GetElement();
-    vector<int> composition = input->GetComposition();
-    for (unsigned int i = 0; i < element.size(); ++i) {
-        comp += element[i];
-        comp += to_string(composition[i] * input->GetZNumber());
-    }
-    ElemInfo::readComposition(comp, atoms);
-
-    int n_population = 0;
-    while (n_population < end - begin) {
-        /* do something */
-        Crystal crystal;
-        if (crystal.getVolume() > 0) {
-            SortCrystal(&crystal, atoms);
-            crystal_list[begin + n_population] = crystal;
-            n_population++;
+        ls.a *= (1 + epsilon);
+        /* b */
+        epsilon = norm(gen);
+        while ((epsilon > 0.5) || (epsilon < -0.5)) {
+            epsilon = norm(gen);
         }
+        ls.b *= (1 + epsilon);
+        /* c */
+        epsilon = norm(gen);
+        while ((epsilon > 0.5) || (epsilon < -0.5)) {
+            epsilon = norm(gen);
+        }
+        ls.c *= (1 + epsilon);
+        /* alpha */
+        epsilon = norm(gen) * 180;
+        while ((ls.alpha + epsilon > 180) || (ls.alpha + epsilon < 0)) {
+            epsilon = norm(gen);
+        }
+        ls.alpha += epsilon;
+        /* beta */
+        epsilon = norm(gen) * 180;
+        while ((ls.alpha + epsilon > 180) || (ls.alpha + epsilon < 0)) {
+            epsilon = norm(gen);
+        }
+        ls.beta += epsilon;
+        /* gamma */
+        epsilon = norm(gen) * 180;
+        while ((ls.alpha + epsilon > 180) || (ls.alpha + epsilon < 0)) {
+            epsilon = norm(gen);
+        }
+        ls.gamma += epsilon;
+
+        /* insert crystal */
+        crystal_list[begin + n_crystal] = crystal;
     }
 }
 

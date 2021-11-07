@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <iostream>
 #include <numeric>
@@ -90,6 +91,7 @@ int main(int argc, char** argv)
     /* global variable */
     Crystal *crystal_list = new Crystal[input->GetMaxPopulation()];
     double *energy_list = new double[input->GetMaxPopulation()];
+    double *volume_list = new double[input->GetMaxPopulation()];
     double min_energy = 0;
     int n_atoms = 0;
     int n_best = 0;
@@ -129,9 +131,12 @@ int main(int argc, char** argv)
                 /* random generation */
                 RandomGeneration(input, tmp_crystal_list, disp[0], disp[1]);
                 /* inheritance */
-                Crossover(input, tmp_crystal_list, disp[1], disp[2]);
-                Permutation(input, tmp_crystal_list, disp[2], disp[3]);
-                LatticeMutation(input, tmp_crystal_list, disp[3], disp[4]);
+                Crossover(input, crystal_list, n_gene,
+                          tmp_crystal_list, disp[1], disp[2]);
+                Permutation(input, crystal_list, n_gene,
+                            tmp_crystal_list, disp[2], disp[3]);
+                LatticeMutation(input, crystal_list, n_gene,
+                                tmp_crystal_list, disp[3], disp[4]);
                 /* best structure */
                 for (int i = 0; i < n_best; ++i) {
                     tmp_crystal_list[tmp_population + i] = crystal_list[i];
@@ -209,8 +214,6 @@ int main(int argc, char** argv)
             local_atom += n_atoms;
         }
 
-        cout << "while" << endl;
-
         /* gather */
         if (local_rank == 0) {
             /* send the number of crystals in each node */
@@ -248,8 +251,6 @@ int main(int argc, char** argv)
             delete []disp;
         }
 
-        cout << "gather" << endl;
-
         if (rank == 0) {
             for (int i = 0; i < population; ++i) {
                 vector<atomStruct> as;
@@ -273,6 +274,7 @@ int main(int argc, char** argv)
             for (int i = 0; i < population; ++i) {
                 crystal_list[i] = tmp_crystal_list[argsort[i]];
                 energy_list[i] = global_energy[argsort[i]];
+                volume_list[i] = crystal_list[i].getVolume();
                 if (energy_list[i] - min_energy >
                     input->GetGeneWindow() * n_atoms) {
                     n_gene++;
@@ -283,9 +285,9 @@ int main(int argc, char** argv)
                 }
             }
             delete []argsort;
-        }
 
-        cout << "sort" << endl;
+            //TODO: LOG
+        }
 
         /* initialize global_index */
         *global_index = 0;
@@ -301,11 +303,11 @@ int main(int argc, char** argv)
         delete []local_energy;
         delete []local_ls;
         delete []local_as;
-        cout << "delete" << endl;
     }
 
     delete []crystal_list;
     delete []energy_list;
+    delete []volume_list;
     delete input;
 
     MPI_Barrier(MPI_COMM_WORLD);
