@@ -1,4 +1,6 @@
+#include <algorithm>
 #include <cmath>
+#include <numeric>
 #include <random>
 #include "elemInfo.h"
 #include "randSpg.h"
@@ -21,7 +23,7 @@ void RandomGeneration(Input *input, Crystal *crystal_list, int begin, int end)
     int z_number = input->GetZNumber();
     vector<string> element = input->GetElement();
     vector<int> composition = input->GetComposition();
-    for (unsigned int i = 0; i < element.size(); ++i) {
+    for (int i = 0; i < input->GetNelement(); ++i) {
         tmp_comp += element[i];
         tmp_comp += to_string(composition[i] * z_number);
     }
@@ -75,9 +77,10 @@ void Permutation(Input *input, Crystal *parent_list, int n_gene,
     vector<unsigned int> atoms;
     string tmp_comp = "";
     int z_number = input->GetZNumber();
+    int nelement = input->GetNelement();
     vector<string> element = input->GetElement();
     vector<int> composition = input->GetComposition();
-    for (unsigned int i = 0; i < element.size(); ++i) {
+    for (int i = 0; i < nelement; ++i) {
         tmp_comp += element[i];
         tmp_comp += to_string(composition[i] * z_number);
     }
@@ -90,18 +93,20 @@ void Permutation(Input *input, Crystal *parent_list, int n_gene,
         gen.seed(random_seed);
     }
     uniform_int_distribution<int> uni(0, n_gene - 1);
-    uniform_int_distribution<int> type(0, input->GetNelement() - 1);
+    uniform_int_distribution<int> type(0, nelement - 1);
 
     for (int n_crystal = 0; n_crystal < end - begin; ++n_crystal) {
         Crystal crystal = crystal_list[uni(gen)];
         vector<atomStruct> as = crystal.getAtoms();
         int i;
         int j;
+        /* swap element type */
         do {
             i = type(gen); 
             j = type(gen); 
         } while (i == j);
 
+        /* the number of swap atom */
         int max_swap;
         if (composition[i] > composition[j]) {
             max_swap = composition[j] * z_number / 2;
@@ -111,9 +116,30 @@ void Permutation(Input *input, Crystal *parent_list, int n_gene,
         uniform_int_distribution<int> swap(0, max_swap);
         int n_swap = swap(gen);
 
-        // TODO: iter_swap;
+        /* find pair */
+        int *acc_index = new int[nelement]();
+        for (int k = 1; k < nelement; ++k) {
+            acc_index[k] = acc_index[k - 1] + composition[k - 1];
+        }
+        int *i_index = new int[composition[i]];
+        iota(i_index, i_index + composition[i], acc_index[i]);
+        shuffle(i_index, i_index + composition[i], gen);
+        int *j_index = new int[composition[j]];
+        iota(j_index, j_index + composition[j], acc_index[j]);
+        shuffle(j_index, j_index + composition[j], gen);
+
+        /* swap */ 
+        for (int k = 0; k < n_swap; ++k) {
+            iter_swap(as.begin() + i_index[k], as.begin() + j_index[k]); 
+        }
+
+        crystal.setAtoms(as);
         SortCrystal(&crystal, atoms);
         crystal_list[begin + n_crystal] = crystal;
+
+        delete []acc_index;
+        delete []i_index;
+        delete []j_index;
     }
 }
 

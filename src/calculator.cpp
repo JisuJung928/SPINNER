@@ -99,6 +99,20 @@ void *LammpsInit(Input *input, Crystal *crystal, MPI_Comm *comm)
     return lmp;
 }
 
+double Oneshot(Input *input, Crystal *crystal, MPI_Comm *comm)
+{
+    /* create LAMMPS instance */
+    void *lmp = LammpsInit(input, crystal, comm);
+
+    /* oneshot */
+    lammps_command(lmp, "run 0");
+    double pe = lammps_get_thermo(lmp, "pe");
+
+    /* delete LAMMPS instance */
+    lammps_close(lmp);
+
+    return pe;
+}
 
 double Relax(Input *input, Crystal *crystal, MPI_Comm *comm)
 {
