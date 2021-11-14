@@ -14,24 +14,24 @@ RELAX_ITER      = 5
 
 # Evolution
 GENERATION      = 3
-POPULATION      = 5
+POPULATION      = 10
 MAX_POPULATION  = 500
 INIT_WINDOW     = 0.5
 GENE_WINDOW     = 0.2
 BEST_WINDOW     = 0.1
 
 # Operator
-RANDOM_GEN      = 1.0
+RANDOM_GEN      = 0.5
 CROSSOVER       = 0.0
-PERMUTATION     = 0.0
-LATTICE_MUT     = 0.0
+PERMUTATION     = 0.3
+LATTICE_MUT     = 0.2
 
 # Constraint
 # order: 1-1, 1-2, ..., 1-N, 2-1, ..., N-N
 CONSTRAINT      = 1.5 1.5 1.5 1.5 1.5 1.5
 
 # Parallelism
-NPAR            = 2
+NPAR            = 4
 
 # Random
 RANDOM_SEED     = -1

@@ -1,5 +1,8 @@
+#include <algorithm>
 #include <iostream>
 #include <fstream>
+#include <sstream>
+#include <string>
 #include "input.h"
 
 double GetMassFromSymbol(string symbol)
@@ -113,103 +116,96 @@ using namespace std;
 Input *ReadInput(string filename)
 {
     Input *input = new Input();
-    char *ptr, line[MAXLINE];
+    string line;
+    string word;
 
-    ifstream fp;
-    fp.open(filename);
-    if (fp.is_open()) {
-        // TODO: assertion
-        while (!fp.eof()) {
-            fp.getline(line, MAXLINE); 
-            if (strcmp(line, "") == 0) {
+    ifstream in(filename);
+    if (in.is_open()) {
+        while (in) {
+            getline(in, line); 
+            if (line.compare("") == 0) {
                 continue;
-            } else {
-                ptr = strtok(line, " \n\t");
             }
-            if (strncmp(ptr, "#", 1) == 0) {
+            /* replace = with whitespace */
+            replace(line.begin(), line.end(), '=', ' ');
+            istringstream iss;
+            iss.str(line);
+            /* skip whitespaces */
+            getline(iss >> ws, word, ' ');
+            if (word.substr(0, 1).compare("#") == 0) {
                 continue;
-            } else if (strcmp(ptr, "ELEMENT") == 0) {
-                strtok(nullptr, " \n\t");
-                ptr = strtok(nullptr, " \n\t");
+            } else if (word.compare("ELEMENT") == 0) {
                 vector<string> element;
-                while (ptr != nullptr) {
-                    element.push_back(string(ptr));
-                    ptr = strtok(nullptr, " \n");
+                while (getline(iss >> ws, word, ' ')) {
+                    element.push_back(word);
                 }
                 input->SetElement(element);
                 input->SetNelement(input->GetElement().size());
-            } else if (strcmp(ptr, "COMPOSITION") == 0) {
-                strtok(nullptr, " \n\t");
-                ptr = strtok(nullptr, " \n\t");
+            } else if (word.compare("COMPOSITION") == 0) {
                 vector<int> composition;
-                while (ptr != nullptr) {
-                    composition.push_back(atoi(ptr));
-                    ptr = strtok(nullptr, " \n");
+                while (getline(iss >> ws, word, ' ')) {
+                    composition.push_back(stoi(word));
                 }
                 input->SetComposition(composition);
-            } else if (strcmp(ptr, "Z_NUMBER") == 0) {
-                strtok(nullptr, " \n\t");
-                input->SetZNumber(atoi(strtok(nullptr, "\n")));
-            } else if (strcmp(ptr, "VOLUME") == 0) {
-                strtok(nullptr, " \n\t");
-                input->SetVolume(atof(strtok(nullptr, "\n")));
-            } else if (strcmp(ptr, "PAIR_STYLE") == 0) {
-                strtok(nullptr, " \n\t");
-                input->SetPairStyle(strtok(nullptr, "\n"));
-            } else if (strcmp(ptr, "PAIR_COEFF") == 0) {
-                strtok(nullptr, " \n\t");
-                input->SetPairCoeff(strtok(nullptr, "\n"));
-            } else if (strcmp(ptr, "MAX_FORCE") == 0) {
-                strtok(nullptr, " \n\t");
-                input->SetMaxForce(atof(strtok(nullptr, "\n")));
-            } else if (strcmp(ptr, "RELAX_ITER") == 0) {
-                strtok(nullptr, " \n\t");
-                input->SetRelaxIteration(atoi(strtok(nullptr, "\n")));
-            } else if (strcmp(ptr, "GENERATION") == 0) {
-                strtok(nullptr, " \n\t");
-                input->SetGeneration(atoi(strtok(nullptr, "\n")));
-            } else if (strcmp(ptr, "POPULATION") == 0) {
-                strtok(nullptr, " \n\t");
-                input->SetPopulation(atoi(strtok(nullptr, "\n")));
-            } else if (strcmp(ptr, "MAX_POPULATION") == 0) {
-                strtok(nullptr, " \n\t");
-                input->SetMaxPopulation(atoi(strtok(nullptr, "\n")));
-            } else if (strcmp(ptr, "INIT_WINDOW") == 0) {
-                strtok(nullptr, " \n\t");
-                input->SetInitWindow(atof(strtok(nullptr, "\n")));
-            } else if (strcmp(ptr, "GENE_WINDOW") == 0) {
-                strtok(nullptr, " \n\t");
-                input->SetGeneWindow(atof(strtok(nullptr, "\n")));
-            } else if (strcmp(ptr, "BEST_WINDOW") == 0) {
-                strtok(nullptr, " \n\t");
-                input->SetBestWindow(atof(strtok(nullptr, "\n")));
-            } else if (strcmp(ptr, "RANDOM_GEN") == 0) {
-                strtok(nullptr, " \n\t");
-                input->SetRandomGen(atof(strtok(nullptr, "\n")));
-            } else if (strcmp(ptr, "CROSSOVER") == 0) {
-                strtok(nullptr, " \n\t");
-                input->SetCrossover(atof(strtok(nullptr, "\n")));
-            } else if (strcmp(ptr, "PERMUTATION") == 0) {
-                strtok(nullptr, " \n\t");
-                input->SetPermutation(atof(strtok(nullptr, "\n")));
-            } else if (strcmp(ptr, "LATTICE_MUT") == 0) {
-                strtok(nullptr, " \n\t");
-                input->SetLatticeMut(atof(strtok(nullptr, "\n")));
-            } else if (strcmp(ptr, "CONSTRAINT") == 0) {
-                strtok(nullptr, " \n\t");
-                ptr = strtok(nullptr, " \n\t");
+            } else if (word.compare("Z_NUMBER") == 0) {
+                getline(iss >> ws, word);
+                input->SetZNumber(stoi(word));
+            } else if (word.compare("VOLUME") == 0) {
+                getline(iss >> ws, word);
+                input->SetVolume(stof(word));
+            } else if (word.compare("PAIR_STYLE") == 0) {
+                getline(iss >> ws, word);
+                input->SetPairStyle(word);
+            } else if (word.compare("PAIR_COEFF") == 0) {
+                getline(iss >> ws, word);
+                input->SetPairCoeff(word);
+            } else if (word.compare("MAX_FORCE") == 0) {
+                getline(iss >> ws, word);
+                input->SetMaxForce(stof(word));
+            } else if (word.compare("RELAX_ITER") == 0) {
+                getline(iss >> ws, word);
+                input->SetRelaxIteration(stoi(word));
+            } else if (word.compare("GENERATION") == 0) {
+                getline(iss >> ws, word);
+                input->SetGeneration(stoi(word));
+            } else if (word.compare("POPULATION") == 0) {
+                getline(iss >> ws, word);
+                input->SetPopulation(stoi(word));
+            } else if (word.compare("MAX_POPULATION") == 0) {
+                getline(iss >> ws, word);
+                input->SetMaxPopulation(stoi(word));
+            } else if (word.compare("INIT_WINDOW") == 0) {
+                getline(iss >> ws, word);
+                input->SetInitWindow(stof(word));
+            } else if (word.compare("GENE_WINDOW") == 0) {
+                getline(iss >> ws, word);
+                input->SetGeneWindow(stof(word));
+            } else if (word.compare("BEST_WINDOW") == 0) {
+                getline(iss >> ws, word);
+                input->SetBestWindow(stof(word));
+            } else if (word.compare("RANDOM_GEN") == 0) {
+                getline(iss >> ws, word);
+                input->SetRandomGen(stof(word));
+            } else if (word.compare("CROSSOVER") == 0) {
+                getline(iss >> ws, word);
+                input->SetCrossover(stof(word));
+            } else if (word.compare("PERMUTATION") == 0) {
+                getline(iss >> ws, word);
+                input->SetPermutation(stof(word));
+            } else if (word.compare("LATTICE_MUT") == 0) {
+                getline(iss >> ws, word);
+                input->SetLatticeMut(stof(word));
+            } else if (word.compare("CONSTRAINT") == 0) {
                 vector<double> constraint;
-                while (ptr != nullptr) {
-                    constraint.push_back(atof(ptr));
-                    ptr = strtok(nullptr, " \n");
+                while (getline(iss >> ws, word, ' ')) {
+                    constraint.push_back(stof(word));
                 }
-                input->SetConstraint(constraint);
-            } else if (strcmp(ptr, "NPAR") == 0) {
-                strtok(nullptr, " \n\t");
-                input->SetNpar(atoi(strtok(nullptr, "\n")));
-            } else if (strcmp(ptr, "RANDOM_SEED") == 0) {
-                strtok(nullptr, " \n\t");
-                input->SetRandomSeed(atoi(strtok(nullptr, "\n")));
+            } else if (word.compare("NPAR") == 0) {
+                getline(iss >> ws, word);
+                input->SetNpar(stoi(word));
+            } else if (word.compare("RANDOM_SEED") == 0) {
+                getline(iss >> ws, word);
+                input->SetRandomSeed(stoi(word));
             } else {
                 cout << "Check the input tag!" << endl;
             }
@@ -217,7 +213,6 @@ Input *ReadInput(string filename)
     } else {
         cout << "Check the filename!" << endl;
     }
-    fp.close();
 
     /* mass */
     vector<double> mass;

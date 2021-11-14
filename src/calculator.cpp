@@ -31,6 +31,7 @@ void *LammpsInit(Input *input, Crystal *crystal, MPI_Comm *comm)
 
     /* box */
     latticeStruct lattice = crystal->getLattice();
+
     double cell[3][3];
     cell[0][0] = lattice.a;
     cell[0][1] = 0;
@@ -87,9 +88,13 @@ void *LammpsInit(Input *input, Crystal *crystal, MPI_Comm *comm)
     }
 
     /* potential */
-    sprintf(cmd, "pair_style %s", input->GetPairStyle());
+    char pair_style[128];
+    strcpy(pair_style, input->GetPairStyle().c_str());
+    sprintf(cmd, "pair_style %s", pair_style);
     lammps_command(lmp, cmd);
-    sprintf(cmd, "pair_coeff %s", input->GetPairCoeff());
+    char pair_coeff[128];
+    strcpy(pair_coeff, input->GetPairCoeff().c_str());
+    sprintf(cmd, "pair_coeff %s", pair_coeff);
     lammps_command(lmp, cmd);
 
     delete []id;
