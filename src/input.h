@@ -242,7 +242,6 @@ class Input
             return random_seed;
         }
 };
-double GetMassFromSymbol(string);
 Input *ReadInput(string);
 
 #endif

@@ -305,6 +305,7 @@ int main(int argc, char** argv)
                 tmp_crystal_list[i].setAtoms(as);
                 tmp_crystal_list[i].setLattice(global_ls[i]);
             }
+
             /* sort by energy */
             int *argsort = new int[population];
             iota(argsort, argsort + population, 0);
@@ -315,6 +316,7 @@ int main(int argc, char** argv)
 
             /* copy, count and log */
             n_best = 0;
+            n_gene = 0;
             char tmp_log[128]; 
             string tmp_string;
             for (int i = 0; i < population; ++i) {
