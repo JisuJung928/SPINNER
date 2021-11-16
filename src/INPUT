@@ -1,33 +1,37 @@
 # Structure
-ELEMENT     = Be Li O
-COMPOSITION = 1 2 2
-Z_NUMBER    = 4
-VOLUME      = 200.0
+ELEMENT         = Be Li O
+COMPOSITION     = 1 2 2
+Z_NUMBER        = 4
+VOLUME          = 200.0
 
 # Potential
-PAIR_STYLE  = nn
-PAIR_COEFF  = * * potential_saved Be Li O
+PAIR_STYLE      = nn
+PAIR_COEFF      = * * potential_saved Be Li O
 
 # Calculation
-MAX_FORCE   = 0.02
-RELAX_ITER  = 5
+MAX_FORCE       = 0.02
+RELAX_ITER      = 5
 
 # Evolution
-GENERATION  = 3
-POPULATION  = 5
+GENERATION      = 3
+POPULATION      = 10
+MAX_POPULATION  = 500
+INIT_WINDOW     = 0.5
+GENE_WINDOW     = 0.2
+BEST_WINDOW     = 0.1
 
 # Operator
-RANDOM_GEN  = 1.0
-CROSSOVER   = 0.0
-PERMUTATION = 0.0
-LATTICE_MUT = 0.0
+RANDOM_GEN      = 0.5
+CROSSOVER       = 0.0
+PERMUTATION     = 0.3
+LATTICE_MUT     = 0.2
 
 # Constraint
 # order: 1-1, 1-2, ..., 1-N, 2-1, ..., N-N
-CONSTRAINT  = 1.5 1.5 1.5 1.5 1.5 1.5
+CONSTRAINT      = 1.5 1.5 1.5 1.5 1.5 1.5
 
 # Parallelism
-NPAR = 2
+NPAR            = 4
 
 # Random
-RANDOM_SEED = -1
+RANDOM_SEED     = -1

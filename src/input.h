@@ -17,8 +17,8 @@ class Input
         vector<double> mass;
 
         /* potential */
-        char *pair_style;
-        char *pair_coeff;
+        string pair_style;
+        string pair_coeff;
 
         /* calculation */
         double max_force;
@@ -27,6 +27,10 @@ class Input
         /* evolution */
         int generation;
         int population;
+        int max_population;
+        double init_window;
+        double gene_window;
+        double best_window;
 
         /* operator */
         double random_gen;
@@ -46,13 +50,9 @@ class Input
     public:
         Input()
         {
-            pair_style = new char[128];
-            pair_coeff = new char[128];
             random_seed = -1;
         }
         ~Input(){
-            delete []pair_style;
-            delete []pair_coeff;
         }
 
         /* setter */
@@ -80,13 +80,13 @@ class Input
         {
             mass = v;
         }
-        void SetPairStyle(char *c)
+        void SetPairStyle(string s)
         {
-            strcpy(pair_style, c);
+            pair_style = s;
         }
-        void SetPairCoeff(char *c)
+        void SetPairCoeff(string s)
         {
-            strcpy(pair_coeff, c);
+            pair_coeff = s;
         }
         void SetMaxForce(double d)
         {
@@ -103,6 +103,22 @@ class Input
         void SetPopulation(int i)
         {
             population = i;
+        }
+        void SetMaxPopulation(int i)
+        {
+            max_population = i;
+        }
+        void SetInitWindow(double d)
+        {
+            init_window = d;
+        }
+        void SetGeneWindow(double d)
+        {
+            gene_window = d;
+        }
+        void SetBestWindow(double d)
+        {
+            best_window = d;
         }
         void SetRandomGen(double d)
         {
@@ -165,11 +181,11 @@ class Input
         {
             return relax_iter;
         }
-        char *GetPairStyle() const
+        string GetPairStyle() const
         {
             return pair_style;
         }
-        char *GetPairCoeff() const
+        string GetPairCoeff() const
         {
             return pair_coeff;
         }
@@ -180,6 +196,22 @@ class Input
         int GetPopulation() const
         {
             return population;
+        }
+        int GetMaxPopulation() const
+        {
+            return max_population;
+        }
+        double GetInitWindow() const
+        {
+            return init_window;
+        }
+        double GetGeneWindow() const
+        {
+            return gene_window;
+        }
+        double GetBestWindow() const
+        {
+            return best_window;
         }
         double GetRandomGen() const
         {
@@ -210,7 +242,6 @@ class Input
             return random_seed;
         }
 };
-double GetMassFromSymbol(string);
 Input *ReadInput(string);
 
 #endif

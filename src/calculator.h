@@ -6,5 +6,6 @@
 #include "input.h"
 
 void *LammpsInit(Input *, Crystal *, MPI_Comm *);
+double Oneshot(Input *, Crystal *, MPI_Comm *);
 double Relax(Input *, Crystal *, MPI_Comm *);
 #endif
