@@ -18,12 +18,88 @@ void WriteCrystal(Crystal *crystal, string filename)
 }
 
 
-void GatherCrystal(Crystal *crystal_list,
-                   MPI_Datatype mpi_latticeStruct,
-                   MPI_Datatype mpi_atomStruct,
-                   int index,
-                   MPI_Comm *comm)
+void GathervCrystal(Crystal *local_crystal_list,
+                    Crystal *global_crystal_list,
+                    MPI_Datatype mpi_latticeStruct,
+                    MPI_Datatype mpi_atomStruct,
+                    int local_crystal,
+                    MPI_Comm comm)
 {
+    int rank;
+    int size;
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
+
+    int n_atoms;
+    if (rank == 0) {
+        n_atoms = (int)local_crystal_list[0].numAtoms();
+    }
+    MPI_Bcast(&n_atoms, 1, MPI_INT, 0, comm);
+
+    int *global_crystal = new int[size];
+    MPI_Gather(&local_crystal, 1, MPI_INT,
+               global_crystal, 1, MPI_INT, 0, comm);
+
+    int local_atom = local_crystal * n_atoms;
+    int *global_atom = new int[size];
+    MPI_Gather(&local_atom, 1, MPI_INT,
+               global_atom, 1, MPI_INT, 0, comm);
+
+    int total_crystal = 0;
+    for (int i = 0; i < size; ++i) {
+        total_crystal += global_crystal[i];
+    }
+    MPI_Bcast(&total_crystal, 1, MPI_INT, 0, comm);
+
+    /* split Crystal into latticeStruct and atomStruct */
+    latticeStruct *local_ls = new latticeStruct[local_crystal];
+    atomStruct *local_as = new atomStruct[n_atoms * local_crystal];
+    for (int i = 0; i < local_crystal; ++i) {
+        local_ls[i] = local_crystal_list[i].getLattice();
+        vector<atomStruct> as = local_crystal_list[i].getAtoms();
+        for (int j = 0; j < n_atoms; ++j) {
+            local_as[i * n_atoms + j] = as[j];
+        }
+    }
+
+    /* gatherv latticeStruct */
+    int *disp = new int[size]();
+    for (int i = 1; i < size; ++i) {
+        disp[i] = disp[i - 1] + global_crystal[i - 1]; 
+    }
+    latticeStruct *global_ls = new latticeStruct[total_crystal];
+    MPI_Gatherv(local_ls, local_crystal, mpi_latticeStruct,
+                global_ls, global_crystal, disp, mpi_latticeStruct,
+                0, comm);
+
+    /* gatherv atomStruct */
+    for (int i = 1; i < size; ++i) {
+        disp[i] = disp[i - 1] + global_atom[i - 1];
+    }
+    atomStruct *global_as = new atomStruct[total_crystal * n_atoms];
+    MPI_Gatherv(local_as, local_atom, mpi_atomStruct,
+                global_as, global_atom, disp, mpi_atomStruct,
+                0, comm);
+
+    /* construct Crystal */
+    if (rank == 0) {
+        for (int i = 0; i < total_crystal; ++i) {
+            global_crystal_list[i].setLattice(global_ls[i]);
+            vector<atomStruct> as;
+            as.reserve(n_atoms);
+            for (int j = 0; j < n_atoms; ++j) {
+                as.push_back(global_as[i * n_atoms + j]);
+            }
+            global_crystal_list[i].setAtoms(as);
+        }
+    }
+
+    delete []disp;
+    delete []global_crystal;
+    delete []local_ls;
+    delete []local_as;
+    delete []global_ls;
+    delete []global_as;
 }
 
 
@@ -31,22 +107,22 @@ void BcastCrystal(Crystal *crystal_list,
                   MPI_Datatype mpi_latticeStruct,
                   MPI_Datatype mpi_atomStruct,
                   int index,
-                  MPI_Comm *comm)
+                  MPI_Comm comm)
 {
     int rank;
-    MPI_Comm_rank(*comm, &rank);
+    MPI_Comm_rank(comm, &rank);
 
     latticeStruct ls;
     if (rank == 0) {
         ls = crystal_list[index].getLattice();
     }
-    MPI_Bcast(&ls, 1, mpi_latticeStruct, 0, *comm);
+    MPI_Bcast(&ls, 1, mpi_latticeStruct, 0, comm);
 
     int n_atoms;
     if (rank == 0) {
         n_atoms = (int)crystal_list[index].numAtoms();
     }
-    MPI_Bcast(&n_atoms, 1, MPI_INT, 0, *comm);
+    MPI_Bcast(&n_atoms, 1, MPI_INT, 0, comm);
 
     vector<atomStruct> as;
     if (rank == 0) {
@@ -54,7 +130,7 @@ void BcastCrystal(Crystal *crystal_list,
     } else {
         as.resize(n_atoms);
     }
-    MPI_Bcast(&as[0], n_atoms, mpi_atomStruct, 0, *comm);
+    MPI_Bcast(&as[0], n_atoms, mpi_atomStruct, 0, comm);
 
     if (rank != 0) {
         crystal_list[index] = Crystal(ls, as);

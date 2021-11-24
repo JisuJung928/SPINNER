@@ -16,9 +16,10 @@ inline bool CheckLattice(latticeStruct ls)
             (ls.beta + ls.gamma > ls.alpha) &&
             (ls.gamma + ls.alpha > ls.beta));
 }
+
 void SortCrystal(Crystal *, vector<unsigned int>);
 void WriteCrystal(Crystal *, string);
-void GatherCrystal(Crystal *, MPI_Datatype, MPI_Datatype, int, MPI_Comm *);
-void BcastCrystal(Crystal *, MPI_Datatype, MPI_Datatype, int, MPI_Comm *);
+void GathervCrystal(Crystal *, Crystal *, MPI_Datatype, MPI_Datatype, int, MPI_Comm);
+void BcastCrystal(Crystal *, MPI_Datatype, MPI_Datatype, int, MPI_Comm);
 double GetMassFromSymbol(string);
 #endif

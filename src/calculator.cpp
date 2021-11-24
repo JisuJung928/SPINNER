@@ -104,12 +104,23 @@ void *LammpsInit(Input *input, Crystal *crystal, MPI_Comm *comm)
     return lmp;
 }
 
-double Oneshot(Input *input, Crystal *crystal, MPI_Comm *comm)
+double Oneshot(Input *input, Crystal *crystal, int axis, MPI_Comm *comm)
 {
     /* create LAMMPS instance */
     void *lmp = LammpsInit(input, crystal, comm);
 
+    if (axis == 0) {
+        lammps_command(lmp, "change_box boundary f p p");
+    } else if (axis == 1) {
+        lammps_command(lmp, "change_box boundary p f p");
+    } else {
+        lammps_command(lmp, "change_box boundary p p f");
+    }
+
     /* oneshot */
+    if (axis) {
+        lammps_command(lmp, "thermo_modify norm yes");
+    }
     lammps_command(lmp, "run 0");
     double pe = lammps_get_thermo(lmp, "pe");
 

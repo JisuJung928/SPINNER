@@ -31,7 +31,7 @@ LATTICE_MUT     = 0.2
 CONSTRAINT      = 1.5 1.5 1.5 1.5 1.5 1.5
 
 # Parallelism
-NPAR            = 4
+NPAR            = 2
 
 # Random
 RANDOM_SEED     = -1

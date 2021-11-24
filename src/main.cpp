@@ -88,13 +88,14 @@ int main(int argc, char** argv)
             log.close();
         }
         delete input; 
-        exit(1);
+        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Finalize();
     }
-    int group_number = size / input->GetNpar();
-    int group_index = rank / input->GetNpar();
+    int group_size = size / input->GetNpar();
+    int group_rank = rank / input->GetNpar();
     int local_rank = rank % input->GetNpar();
     MPI_Comm lammps_comm;
-    MPI_Comm_split(MPI_COMM_WORLD, group_index, rank, &lammps_comm);
+    MPI_Comm_split(MPI_COMM_WORLD, group_rank, rank, &lammps_comm);
 
     /* one-sided communication */
     int header;
@@ -131,64 +132,128 @@ int main(int argc, char** argv)
 
     /* main loop */
     for (int gen = 0; gen < input->GetGeneration(); ++gen) {
+        MPI_Bcast(&n_gene, 1, MPI_INT, 0, MPI_COMM_WORLD);
         MPI_Bcast(&n_best, 1, MPI_INT, 0, MPI_COMM_WORLD);
         population = input->GetPopulation() + n_best;
-        if (population < group_number) {
+        if (population < group_size) {
             if (rank == 0) {
-                log << "Larger NPAR in INPUT is suggested for faster speed." << endl;
+                cout << "Larger NPAR in INPUT is suggested." << endl;
             }
         }
         Crystal *tmp_crystal_list = new Crystal[population];
+        int tmp_population = input->GetPopulation();
+        int disp[5];
+        disp[0] = 0;
         if (gen == 0) {
-            if (rank == 0) {
-                RandomGeneration(input, tmp_crystal_list, 0, population);
-            }
+            disp[1] = tmp_population;
+            disp[2] = tmp_population;
+            disp[3] = tmp_population;
+            disp[4] = tmp_population;
         } else {
-            if (rank == 0) {
-                int tmp_population = input->GetPopulation();
-                int disp[5] = {
-                    0,
-                    (int)round(input->GetRandomGen() * tmp_population),
-                    (int)round(input->GetCrossover() * tmp_population),
-                    (int)round(input->GetPermutation() * tmp_population),
-                    (int)round(input->GetLatticeMut() * tmp_population)
-                };
-                for (int i = 1; i < 5; ++i) {
-                    disp[i] = disp[i] + disp[i - 1];
-                }
-                int diff = tmp_population - disp[4];
-                for (int i = 1; i < 5; ++i) {
-                    disp[i] += diff;
-                }
+            disp[1] = (int)round(input->GetRandomGen() * tmp_population);
+            disp[2] = (int)round(input->GetCrossover() * tmp_population);
+            disp[3] = (int)round(input->GetPermutation() * tmp_population);
+            disp[4] = (int)round(input->GetLatticeMut() * tmp_population);
+            for (int i = 1; i < 5; ++i) {
+                disp[i] += disp[i - 1];
+            }
+            int diff = tmp_population - disp[4];
+            for (int i = 0; i < 5; ++i) {
+                disp[i] += diff;
+            }
+        }
+        int begin;
+        int end;
+        /* random generation */
+        if (disp[1] - disp[0]) {
+            if (disp[1] - disp[0] > size) {
+                int q = (disp[1] - disp[0]) / size;
+                int r = (disp[1] - disp[0]) % size;
+                begin = rank * q + ((rank > r) ? r : rank);
+                end = begin + q;
+            } else {
+                begin = rank;
+                end = (rank >= disp[1] - disp[0]) ? rank : rank + 1;
+            }
+            Crystal *local_crystal_list = new Crystal[end - begin];
+            RandomGeneration(input, local_crystal_list, end - begin);
+            GathervCrystal(local_crystal_list, tmp_crystal_list + disp[0],
+                           mpi_latticeStruct, mpi_atomStruct,
+                           end - begin, MPI_COMM_WORLD);
+            delete []local_crystal_list;
+        }
 
-                /* random generation */
-                if (disp[1] - disp[0]) {
-                    RandomGeneration(input, tmp_crystal_list, disp[0], disp[1]);
-                }
-                /* inheritance */
-                if (disp[2] - disp[1]) {
-                    Crossover(input, crystal_list, n_gene,
-                              tmp_crystal_list, disp[1], disp[2]);
-                }
-                if (disp[3] - disp[2]) {
-                    Permutation(input, crystal_list, n_gene,
-                                tmp_crystal_list, disp[2], disp[3]);
-                }
-                if (disp[4] - disp[3]) {
-                    LatticeMutation(input, crystal_list, n_gene,
-                                    tmp_crystal_list, disp[3], disp[4]);
-                }
-                /* best structure */
-                for (int i = 0; i < n_best; ++i) {
-                    tmp_crystal_list[tmp_population + i] = crystal_list[i];
+        /* crossover */
+        if (disp[2] - disp[1]) {
+            if (disp[2] - disp[1] > group_size) {
+                int q = (disp[2] - disp[1]) / group_size;
+                int r = (disp[2] - disp[1]) % group_size;
+                begin = group_rank * q + ((group_rank > r) ? r : group_rank);
+                end = begin + q;
+            } else {
+                begin = group_rank;
+                end = (group_rank >= disp[2] - disp[1]) ? group_rank : group_rank + 1;
+            }
+            Crystal *local_crystal_list = new Crystal[end - begin];
+            Crossover(input, crystal_list, n_gene,
+                      local_crystal_list, end - begin, lammps_comm);
+            GathervCrystal(local_crystal_list, tmp_crystal_list + disp[1],
+                           mpi_latticeStruct, mpi_atomStruct,
+                           end - begin, header_comm);
+            delete []local_crystal_list;
+        }
+        /* permutation */
+        if (disp[3] - disp[2]) {
+            if (disp[3] - disp[2] > size) {
+                int q = (disp[3] - disp[2]) / size;
+                int r = (disp[3] - disp[2]) % size;
+                begin = rank * q + ((rank > r) ? r : rank);
+                end = begin + q;
+            } else {
+                begin = rank;
+                end = (rank >= disp[3] - disp[2]) ? rank : rank + 1;
+            }
+            Crystal *local_crystal_list = new Crystal[end - begin];
+            Permutation(input, crystal_list, n_gene,
+                        local_crystal_list, end - begin);
+            GathervCrystal(local_crystal_list, tmp_crystal_list + disp[2],
+                           mpi_latticeStruct, mpi_atomStruct,
+                           end - begin, MPI_COMM_WORLD);
+            if (rank == 0) {
+                for (int test = 5; test < 8; ++test) {
+                    printf("0 volume? %f\n", tmp_crystal_list[test].getVolume());
                 }
             }
+            delete []local_crystal_list;
+        }
+        /* lattice mutation */
+        if (disp[4] - disp[3]) {
+            if (disp[4] - disp[3] > size) {
+                int q = (disp[4] - disp[3]) / size;
+                int r = (disp[4] - disp[3]) % size;
+                begin = rank * q + ((rank > r) ? r : rank);
+                end = begin + q;
+            } else {
+                begin = rank;
+                end = (rank >= disp[4] - disp[3]) ? rank : rank + 1;
+            }
+            Crystal *local_crystal_list = new Crystal[end - begin];
+            LatticeMutation(input, crystal_list, n_gene,
+                            local_crystal_list, end - begin);
+            GathervCrystal(local_crystal_list, tmp_crystal_list + disp[3],
+                           mpi_latticeStruct, mpi_atomStruct,
+                           end - begin, MPI_COMM_WORLD);
+            delete []local_crystal_list;
+        }
+        /* best structure */
+        for (int i = 0; i < n_best; ++i) {
+            tmp_crystal_list[tmp_population + i] = crystal_list[i];
         }
 
         /* global information */
         double *global_energy = new double[population];
-        int *global_crystal = new int[group_number]; 
-        int *global_atom = new int[group_number];
+        int *global_crystal = new int[group_size]; 
+        int *global_atom = new int[group_size];
         latticeStruct *global_ls = new latticeStruct[population];
         atomStruct *global_as = new atomStruct[n_atoms * population];
 
@@ -207,7 +272,7 @@ int main(int argc, char** argv)
                     mpi_latticeStruct,
                     mpi_atomStruct,
                     pop,
-                    &header_comm
+                    header_comm
                 );
             }
         }
@@ -235,7 +300,7 @@ int main(int argc, char** argv)
                 mpi_latticeStruct,
                 mpi_atomStruct,
                 local_index,
-                &lammps_comm
+                lammps_comm
             );
 
             Crystal crystal = tmp_crystal_list[local_index];
@@ -258,41 +323,41 @@ int main(int argc, char** argv)
 
         /* gather */
         if (local_rank == 0) {
-            /* send the number of crystals in each node */
+            /* allgather the number of crystals in each node */
             MPI_Allgather(&local_crystal, 1, MPI_INT, 
                           global_crystal, 1, MPI_INT, header_comm);
 
-            /* send the number of atoms in each node  */
+            /* gather the number of atoms in each node  */
             MPI_Gather(&local_atom, 1, MPI_INT,
                        global_atom, 1, MPI_INT, 0, header_comm);
 
             /* send the number of atoms in each crystal */
-            int *disp = new int[group_number]();
-            if (group_number > 1) {
-                for (int i = 1; i < group_number; ++i) {
-                    disp[i] = disp[i - 1] + global_crystal[i - 1];
+            int *tmp_disp = new int[group_size]();
+            if (group_size > 1) {
+                for (int i = 1; i < group_size; ++i) {
+                    tmp_disp[i] = tmp_disp[i - 1] + global_crystal[i - 1];
                 }
             }
 
-            /* send energy vector */
+            /* gatherv energy */
             MPI_Gatherv(local_energy, local_crystal, MPI_DOUBLE,
-                        global_energy, global_crystal, disp, MPI_DOUBLE,
+                        global_energy, global_crystal, tmp_disp, MPI_DOUBLE,
                         0, header_comm);
 
-            /* send latticeStruct vector */
+            /* gatherv latticeStruct vector */
             MPI_Gatherv(local_ls, local_crystal, mpi_latticeStruct,
-                        global_ls, global_crystal, disp, mpi_latticeStruct,
+                        global_ls, global_crystal, tmp_disp, mpi_latticeStruct,
                         0, header_comm);
 
-            /* send atomStruct vector */
-            for (int i = 1; i < group_number; ++i) {
-                disp[i] = disp[i - 1] + global_atom[i - 1];
+            /* gatherv atomStruct vector */
+            for (int i = 1; i < group_size; ++i) {
+                tmp_disp[i] = tmp_disp[i - 1] + global_atom[i - 1];
             }
             MPI_Gatherv(local_as, local_atom, mpi_atomStruct,
-                        global_as, global_atom, disp, mpi_atomStruct,
+                        global_as, global_atom, tmp_disp, mpi_atomStruct,
                         0, header_comm);
 
-            delete []disp;
+            delete []tmp_disp;
         }
 
         if (rank == 0) {
@@ -341,6 +406,17 @@ int main(int argc, char** argv)
                 }
             }
             delete []argsort;
+        }
+
+        /* broadcast crystal_list from root to all */
+        for (int pop = 0; pop < population; ++pop) {
+            BcastCrystal(
+                crystal_list,
+                mpi_latticeStruct,
+                mpi_atomStruct,
+                pop,
+                MPI_COMM_WORLD
+            );
         }
 
         /* initialize global_index */

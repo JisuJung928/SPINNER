@@ -1,15 +1,17 @@
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <numeric>
 #include <random>
 #include "elemInfo.h"
 #include "randSpg.h"
+#include "calculator.h"
 #include "config.h"
 #include "utils.h"
 
 
 using namespace std;
-void RandomGeneration(Input *input, Crystal *tmp_crystal_list, int begin, int end)
+void RandomGeneration(Input *input, Crystal *tmp_crystal_list, int n_crystal)
 {
     random_device rd;
     mt19937 gen(rd());
@@ -51,7 +53,7 @@ void RandomGeneration(Input *input, Crystal *tmp_crystal_list, int begin, int en
     int maxAttempts = 100;
     bool forceMostGeneralWyckPos = false;
 
-    for (int n_crystal = 0; n_crystal < end - begin; ++n_crystal) {
+    for (int n = 0; n < n_crystal; ++n) {
         Crystal crystal;
         do {
             randSpgInput tmp_input(spg(gen), atoms, lmin, lmax,
@@ -63,12 +65,12 @@ void RandomGeneration(Input *input, Crystal *tmp_crystal_list, int begin, int en
             crystal = RandSpg::randSpgCrystal(tmp_input);
         } while (!CheckLattice(crystal.getLattice()));
         SortCrystal(&crystal, atoms);
-        tmp_crystal_list[begin + n_crystal] = crystal; 
+        tmp_crystal_list[n] = crystal; 
     }
 }
 
 void Crossover(Input *input, Crystal *crystal_list, int n_gene,
-               Crystal *tmp_crystal_list, int begin, int end)
+               Crystal *tmp_crystal_list, int n_crystal, MPI_Comm comm)
 {
     vector<unsigned int> atoms;
     string tmp_comp = "";
@@ -90,27 +92,73 @@ void Crossover(Input *input, Crystal *crystal_list, int n_gene,
     }
     uniform_int_distribution<int> gene(0, n_gene - 1);
 
-    for (int n_crystal = 0; n_crystal < end - begin; ++n_crystal) {
-        /* select old_crystals */
+    for (int n = 0; n < n_crystal; ++n) {
+        /* select crystals */
         int i;
         int j;
         do {
             i = gene(gen);    
             j = gene(gen);    
         } while (i == j);
-        Crystal crystal_i = crystal_list[i];
-        Crystal crystal_j = crystal_list[j];
-        /* make slab */
-        for (int k = 0; k < 10; ++k) {
-            for (int l = 0; l < 3; ++l) {
-                /* copy crystal */
+        array<double, 2> slab_prob;
+        array<int, 2> slab_index;
+        array<int, 2> parents = {i, j};
+        /* for variable n_grid */
+        int n_grid = 10;
+        for (int k = 0; k < 2; ++k) {
+            double *prob = new double[n_grid * 3];
+            vector<atomStruct> as = crystal_list[parents[k]].getAtoms();
+            latticeStruct ls = crystal_list[parents[k]].getLattice();
+            double lo = 0;
+            double hi = lo + 0.5;
+            for (int g = 0; g < n_grid; ++g) {
+                for (int l = 0; l < 3; ++l) {
+                    vector<atomStruct> tmp_as;
+                    for (auto v : as) {
+                        if ((l == 0) && (v.x >= lo) && (v.x < hi)) {
+                            tmp_as.push_back(v);
+                        } else if ((l == 1) && (v.y >= lo) && (v.y < hi)) {
+                            tmp_as.push_back(v);
+                        } else if ((l == 2) && (v.z >= lo) && (v.z < hi)) {
+                            tmp_as.push_back(v);
+                        } else {
+                            continue;
+                        }
+                    } 
+                    Crystal tmp_crystal;
+                    tmp_crystal.setAtoms(tmp_as);
+                    tmp_crystal.setLattice(ls);
+                    /* oneshot for slab by function overloading */
+                    double pe = Oneshot(input, &tmp_crystal, l, &comm);
+                    prob[g * 3 + l] = exp(-pe / (298 * 8.61733 * 1e-5));
+                }
+                lo += 0.5 / 10;
+                hi += 0.5 / 10;
             }
+            double *acc_prob = new double[n_grid * 3];
+            acc_prob[0] = prob[0];
+            for (int g = 1; g < n_grid * 3; ++g) {
+                acc_prob[g] = acc_prob[g - 1] + prob[g];
+            }
+            uniform_real_distribution<double> real(0, acc_prob[n_grid * 3 - 1]);
+            double random = real(gen);
+            int index;
+            for (index = 0; index < n_grid * 3; ++index) {
+                if (random < acc_prob[index]) {
+                    break;
+                }
+            }
+            slab_index[k] = index;
+            slab_prob[k] = prob[index];
+            delete []prob;
+            delete []acc_prob;
         }
+        //tmp_crystal_list[begin + n_crystal] = tmp_crystal;
     }
 }
 
 void Permutation(Input *input, Crystal *crystal_list, int n_gene,
-                 Crystal *tmp_crystal_list, int begin, int end)
+                 Crystal *tmp_crystal_list, int n_crystal)
 {
     vector<unsigned int> atoms;
     string tmp_comp = "";
@@ -133,7 +181,7 @@ void Permutation(Input *input, Crystal *crystal_list, int n_gene,
     uniform_int_distribution<int> gene(0, n_gene - 1);
     uniform_int_distribution<int> type(0, nelement - 1);
 
-    for (int n_crystal = 0; n_crystal < end - begin; ++n_crystal) {
+    for (int n = 0; n < n_crystal; ++n) {
         Crystal crystal = crystal_list[gene(gen)];
         vector<atomStruct> as = crystal.getAtoms();
         /* select element type */
@@ -177,7 +225,7 @@ void Permutation(Input *input, Crystal *crystal_list, int n_gene,
 
         crystal.setAtoms(as);
         SortCrystal(&crystal, atoms);
-        tmp_crystal_list[begin + n_crystal] = crystal;
+        tmp_crystal_list[n] = crystal;
 
         delete []acc_index;
         delete []i_index;
@@ -186,7 +234,7 @@ void Permutation(Input *input, Crystal *crystal_list, int n_gene,
 }
 
 void LatticeMutation(Input *input, Crystal *crystal_list, int n_gene,
-                     Crystal *tmp_crystal_list, int begin, int end)
+                     Crystal *tmp_crystal_list, int n_crystal)
 {
     random_device rd;
     mt19937 gen(rd());
@@ -198,7 +246,7 @@ void LatticeMutation(Input *input, Crystal *crystal_list, int n_gene,
     normal_distribution<double> norm(0, 0.1);
 
     double epsilon;
-    for (int n_crystal = 0; n_crystal < end - begin; ++n_crystal) {
+    for (int n = 0; n < n_crystal; ++n) {
         Crystal crystal = crystal_list[gene(gen)];
         latticeStruct ls = crystal.getLattice();
         /* a */
@@ -248,6 +296,6 @@ void LatticeMutation(Input *input, Crystal *crystal_list, int n_gene,
         }
         /* insert crystal */
         vector<atomStruct> as = crystal.getAtoms();
-        tmp_crystal_list[begin + n_crystal] = crystal;
+        tmp_crystal_list[n] = crystal;
     }
 }
